@@ -68,25 +68,41 @@ When `--filter true`, LHS bracket filters/search/sort are evaluated over the pro
 
 FluentValidation is always generated. Validators are discovered from Application and executed through a Mediator pipeline behavior before handlers. Validation failures are converted to HTTP 400 Problem Details.
 
-## Development `.env` and AI keys
+## Configuration and `.env`
 
-Copy `.env.example` to `.env`. The generated API loads `.env` **before** `WebApplication.CreateBuilder`, without overwriting variables already supplied by the OS/container.
+The .NET backend uses the standard ASP.NET Core configuration providers only. It does **not** parse a project `.env` file and does not know Docker-facing aliases such as `JWT_ISSUER` or `GEMINI_API_KEY`.
 
-Gemini accepts either convention:
+When `--docker true`, the template generates `.env.example`. Copy it to `.env` for Docker Compose interpolation:
 
 ```env
+JWT_ISSUER=TemplateApp
+JWT_KEY=change-me
 GEMINI_API_KEY=your-key
 GEMINI_MODEL=gemini-3.8-flash
 ```
 
-or:
+Compose maps those user-facing aliases to canonical ASP.NET environment keys inside the API container:
 
-```env
-Gemini__ApiKey=your-key
-Gemini__Model=gemini-3.8-flash
+```text
+JWT_ISSUER      -> Jwt__Issuer
+JWT_KEY         -> Jwt__Key
+GEMINI_API_KEY  -> Gemini__ApiKey
+GEMINI_MODEL    -> Gemini__Model
 ```
 
-Docker forwards both conventions as well. OpenAI similarly accepts `OPENAI_API_KEY` / `OpenAI__ApiKey`.
+When running the backend directly without Docker, use normal .NET configuration sources such as `appsettings.Development.json`, `dotnet user-secrets`, or canonical environment variables:
+
+```text
+ConnectionStrings__Default
+Jwt__Issuer
+Jwt__Key
+Gemini__ApiKey
+OpenAI__ApiKey
+Redis__Configuration
+Minio__Endpoint
+```
+
+Frontend-specific environment variables belong to the frontend project rather than the backend configuration pipeline.
 
 ## Profile and avatar
 
@@ -136,7 +152,7 @@ just migrate InitialCreate
 just db-update
 ```
 
-The API applies pending migrations on startup by default (`Database__AutoMigrate=true`). Startup retry applies only to transient connectivity/startup errors; schema/migration errors fail fast.
+The API applies pending migrations on startup by default (`Database__AutoMigrate=true`). Docker Compose maps `AUTO_MIGRATE` from `.env` to that canonical ASP.NET key. Startup retry applies only to transient connectivity/startup errors; schema/migration errors fail fast.
 
 ## Docker and just
 
