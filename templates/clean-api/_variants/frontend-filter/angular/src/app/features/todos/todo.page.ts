@@ -8,6 +8,7 @@ import { TodoStore } from './todo.store';
   selector: 'app-todo-page',
   standalone: true,
   imports: [FormsModule],
+  styleUrls: ['../../shared/pagination.css'],
   template: `<section class="card span-2">
     <div class="section-heading"><div><p class="eyebrow">Productivity</p><h2>Todo list</h2></div><button class="ghost" (click)="store.load()">Refresh</button></div>
     <form class="search-row" (ngSubmit)="store.setSearch(search)"><input name="search" [(ngModel)]="search" placeholder="Search title with LHS $containsi…"/><button>Search</button><button type="button" class="ghost" (click)="search='';store.setSearch('')">Clear</button></form>
