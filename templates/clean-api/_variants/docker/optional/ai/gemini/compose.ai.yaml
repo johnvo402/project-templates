@@ -2,4 +2,4 @@ services:
   api:
     environment:
       Gemini__ApiKey: "${GEMINI_API_KEY:-}"
-      Gemini__Model: "${GEMINI_MODEL:-}"
+      Gemini__Model: "${GEMINI_MODEL:-gemini-3.8-flash}"
