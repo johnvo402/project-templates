@@ -1,11 +1,13 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using TemplateApp.Application.Abstractions.Persistence;
+using TemplateApp.Application.Abstractions.Reporting;
 using TemplateApp.Application.Abstractions.Security;
 using TemplateApp.Infrastructure.AI;
 using TemplateApp.Infrastructure.Caching;
 using TemplateApp.Infrastructure.DomainEvents;
 using TemplateApp.Infrastructure.Persistence;
+using TemplateApp.Infrastructure.Reporting;
 using TemplateApp.Infrastructure.Security;
 using TemplateApp.Infrastructure.Storage;
 
@@ -23,6 +25,7 @@ public static class DependencyInjection
         services.AddOptionalObjectStorage(configuration);
         services.AddOptionalAi(configuration);
         services.AddScoped<IUnitOfWork, UnitOfWork>();
+        services.AddScoped<IBusinessReportingService, BusinessReportingService>();
 
         services.Configure<AuthSessionOptions>(configuration.GetSection(AuthSessionOptions.SectionName));
         services.AddSingleton<Pbkdf2PasswordHasher>();
