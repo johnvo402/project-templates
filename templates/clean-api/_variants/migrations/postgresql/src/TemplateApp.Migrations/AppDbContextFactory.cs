@@ -8,10 +8,9 @@ public sealed class AppDbContextFactory : IDesignTimeDbContextFactory<AppDbConte
 {
     public AppDbContext CreateDbContext(string[] args)
     {
-        var connectionString = FirstNotBlank(
-            Environment.GetEnvironmentVariable("ConnectionStrings__Default"),
-            Environment.GetEnvironmentVariable("DB_CONNECTION"),
-            "Host=localhost;Port=5432;Database=TemplateApp;Username=postgres;Password=postgres");
+        var connectionString =
+            Environment.GetEnvironmentVariable("ConnectionStrings__Default")
+            ?? "Host=localhost;Port=5432;Database=TemplateApp;Username=postgres;Password=postgres";
 
         var optionsBuilder = new DbContextOptionsBuilder<AppDbContext>();
 
@@ -21,7 +20,4 @@ public sealed class AppDbContextFactory : IDesignTimeDbContextFactory<AppDbConte
 
         return new AppDbContext(optionsBuilder.Options);
     }
-
-    private static string FirstNotBlank(params string?[] values)
-        => values.First(value => !string.IsNullOrWhiteSpace(value))!;
 }
