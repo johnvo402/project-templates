@@ -14,7 +14,7 @@ public sealed class GeminiAiService(IOptions<GeminiOptions> options) : IAiServic
     {
         if (string.IsNullOrWhiteSpace(_options.ApiKey))
             throw new InvalidOperationException(
-                "Gemini API key is not configured. Set Gemini__ApiKey or GEMINI_API_KEY.");
+                "Gemini API key is not configured. Set Gemini__ApiKey in ASP.NET configuration.");
 
         var client = new Client(apiKey: _options.ApiKey);
         var response = await client.Models
