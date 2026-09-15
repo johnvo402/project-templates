@@ -1,8 +1,5 @@
 services:
   api:
     environment:
-      # Both conventions are forwarded. AiRegistration accepts either one.
-      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
-      GEMINI_MODEL: ${GEMINI_MODEL:-}
-      Gemini__ApiKey: ${Gemini__ApiKey:-}
-      Gemini__Model: ${Gemini__Model:-}
+      Gemini__ApiKey: "${GEMINI_API_KEY:-}"
+      Gemini__Model: "${GEMINI_MODEL:-gemini-3.8-flash}"

@@ -32,7 +32,6 @@ Generated with `jv-api`, JohnVo's .NET 8+ DDD + Clean Architecture + Vertical Sl
 ## First run
 
 ```bash
-cp .env.example .env
 just build
 just test
 ```
@@ -43,31 +42,53 @@ Create the first migration if the project does not have one yet:
 just migrate InitialCreate
 ```
 
-Run the API:
+Run the API directly:
 
 ```bash
 just run
 ```
 
-The API itself loads the nearest project `.env` before `WebApplication.CreateBuilder`, so raw `dotnet run --project src/TemplateApp.Api` also sees the same values. Existing OS/container variables take precedence.
+The .NET backend uses the standard ASP.NET Core configuration providers. It does not parse a project `.env` file.
 
-## Gemini / OpenAI configuration
+For local backend development without Docker, use `appsettings.Development.json`, `dotnet user-secrets`, or canonical ASP.NET environment variables such as:
 
-Gemini supports either:
+```text
+ConnectionStrings__Default
+Jwt__Issuer
+Jwt__Key
+Gemini__ApiKey
+OpenAI__ApiKey
+Redis__Configuration
+Minio__Endpoint
+```
+
+## Docker `.env` and AI configuration
+
+When the project is generated with `--docker true`, `.env.example` is generated for Docker Compose interpolation:
+
+```bash
+cp .env.example .env
+```
+
+The `.env` file uses user-facing `UPPER_SNAKE_CASE` aliases. Docker Compose maps them to the canonical environment keys consumed by ASP.NET Core. For example:
 
 ```env
+JWT_ISSUER=TemplateApp
+JWT_KEY=change-me
 GEMINI_API_KEY=your-key
 GEMINI_MODEL=gemini-3.8-flash
 ```
 
-or:
+becomes container configuration equivalent to:
 
-```env
-Gemini__ApiKey=your-key
-Gemini__Model=gemini-3.8-flash
+```text
+Jwt__Issuer
+Jwt__Key
+Gemini__ApiKey
+Gemini__Model
 ```
 
-Docker forwards both naming conventions. OpenAI works the same way with `OPENAI_API_KEY` / `OpenAI__ApiKey`.
+OpenAI follows the same boundary: `OPENAI_API_KEY` and `OPENAI_MODEL` are Docker Compose inputs and are mapped to `OpenAI__ApiKey` and `OpenAI__Model` inside the API container.
 
 ## Projection / Model convention
 
@@ -124,7 +145,7 @@ POST /api/profile/avatar
 
 The upload endpoint accepts `multipart/form-data` field `file`. Backend validation allows JPEG/PNG/WebP up to 5 MB and checks the file signature before uploading to MinIO. The user aggregate stores the object name; clients receive a temporary presigned download URL.
 
-`Minio__Endpoint` is the internal API endpoint and `Minio__PublicEndpoint` must be browser-reachable for avatar download URLs.
+`Minio__Endpoint` is the canonical ASP.NET configuration key for the internal API endpoint and `Minio__PublicEndpoint` must be browser-reachable for avatar download URLs. Docker Compose maps its `.env` aliases to these canonical keys when Docker is enabled.
 
 ## Frontend
 
@@ -155,6 +176,8 @@ npm run dev      # React
 # npm start      # Angular
 ```
 
+Frontend-specific environment variables belong to the frontend project and are separate from the backend configuration pipeline.
+
 ## EF migrations without Design package in API
 
 `src/TemplateApp.Migrations` is a dedicated design-time executable host. `Microsoft.EntityFrameworkCore.Design` is not required by the API project.
@@ -166,9 +189,11 @@ just migrations
 just migration-script
 ```
 
-Migration files live in Infrastructure. On API startup, pending migrations are automatically applied. Set `Database__AutoMigrate=false` when deployment infrastructure owns migration execution.
+Migration files live in Infrastructure. On API startup, pending migrations are automatically applied. Set `Database__AutoMigrate=false` through normal ASP.NET configuration when deployment infrastructure owns migration execution. With Docker, set `AUTO_MIGRATE=false` in `.env` and Compose maps it to `Database__AutoMigrate`.
 
 ## Docker commands
+
+When generated with `--docker true`:
 
 ```bash
 just docker-services
@@ -183,6 +208,8 @@ just docker-clean
 `docker-clean` is intentionally stack-wide and performs `down -v --remove-orphans`.
 
 ## Production
+
+For Docker-enabled projects:
 
 ```bash
 cp .env.production.example .env.production

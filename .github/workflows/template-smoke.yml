@@ -12,6 +12,33 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  env-conventions:
+    name: env conventions
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Reject ASP.NET section keys in env examples
+        shell: bash
+        run: |
+          matches="$(grep -RInE --include='.env*.example' '^[[:space:]]*#?[[:space:]]*[A-Za-z0-9_]+__[A-Za-z0-9_]+=' templates/clean-api || true)"
+          if [ -n "$matches" ]; then
+            echo "$matches"
+            echo "Use UPPER_SNAKE_CASE aliases in .env example files; map them to canonical ASP.NET keys in Docker Compose." >&2
+            exit 1
+          fi
+
+      - name: Reject dotenv loading and Docker aliases in backend C#
+        shell: bash
+        run: |
+          matches="$(grep -RInE --include='*.cs' '(DotEnvLoader|AUTO_MIGRATE|DB_CONNECTION|JWT_(ISSUER|AUDIENCE|KEY|EXPIRATION_MINUTES)|REFRESH_(TOKEN_DAYS|COOKIE_NAME)|REDIS_(CONNECTION|INSTANCE_NAME)|MINIO_(PUBLIC_ENDPOINT|PUBLIC_SECURE|ACCESS_KEY|SECRET_KEY|BUCKET|PRESIGNED_EXPIRY_SECONDS)|GEMINI_(API_KEY|MODEL)|OPENAI_(API_KEY|MODEL))' templates/clean-api/src templates/clean-api/_variants || true)"
+          if [ -n "$matches" ]; then
+            echo "$matches"
+            echo "The backend must not load .env files or use Docker-facing aliases; keep aliases in .env/Compose and use canonical ASP.NET configuration in C#." >&2
+            exit 1
+          fi
+
   generated-projects:
     name: ${{ matrix.label }}
     runs-on: ubuntu-latest
@@ -25,6 +52,7 @@ jobs:
             arguments: --framework net9.0
             frontend: false
             filter: false
+            docker: false
             verifyRename: false
           - label: net9 full stack
             project: SmokeFull
@@ -32,6 +60,7 @@ jobs:
             arguments: --framework net9.0 --frontend react --database postgresql --redis true --minio true --ai gemini --filter true --docker true
             frontend: true
             filter: true
+            docker: true
             verifyRename: true
           - label: net9 filter disabled
             project: SmokeNoFilter
@@ -39,6 +68,7 @@ jobs:
             arguments: --framework net9.0 --filter false --ai none
             frontend: false
             filter: false
+            docker: false
             verifyRename: false
           - label: net8 sqlserver
             project: SmokeNet8SqlServer
@@ -46,6 +76,7 @@ jobs:
             arguments: --framework net8.0 --database sqlserver --ai none
             frontend: false
             filter: false
+            docker: false
             verifyRename: false
 
     steps:
@@ -79,6 +110,19 @@ jobs:
       - name: Check generated repository declarations
         shell: pwsh
         run: ./tests/Assert-GeneratedRepositories.ps1 -ProjectRoot $env:SMOKE_OUTPUT
+
+      - name: Check generated env boundary
+        shell: bash
+        run: |
+          if [ "${{ matrix.docker }}" = "true" ]; then
+            if [ ! -f "$SMOKE_OUTPUT/.env.example" ]; then
+              echo ".env.example was not generated for --docker true." >&2
+              exit 1
+            fi
+          elif [ -f "$SMOKE_OUTPUT/.env.example" ]; then
+            echo ".env.example must not be generated when Docker is disabled." >&2
+            exit 1
+          fi
 
       - name: Check filter-disabled output
         if: ${{ matrix.filter == false }}

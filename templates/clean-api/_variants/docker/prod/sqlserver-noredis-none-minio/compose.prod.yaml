@@ -6,23 +6,26 @@ services:
       - "${API_PORT:-8080}:8080"
     environment:
       ASPNETCORE_ENVIRONMENT: Production
+      Database__AutoMigrate: "${AUTO_MIGRATE:-true}"
       ConnectionStrings__Default: "Server=db,1433;Database=TemplateApp;User Id=sa;Password=${DB_PASSWORD};TrustServerCertificate=True"
+      Jwt__Issuer: "${JWT_ISSUER:-TemplateApp}"
+      Jwt__Audience: "${JWT_AUDIENCE:-TemplateApp.Client}"
       Jwt__Key: "${JWT_KEY}"
-      GEMINI_API_KEY: "${GEMINI_API_KEY:-}"
-      GEMINI_MODEL: "${GEMINI_MODEL:-}"
-      Gemini__ApiKey: "${Gemini__ApiKey:-}"
-      Gemini__Model: "${Gemini__Model:-}"
-      OPENAI_API_KEY: "${OPENAI_API_KEY:-}"
-      OPENAI_MODEL: "${OPENAI_MODEL:-}"
-      OpenAI__ApiKey: "${OpenAI__ApiKey:-}"
-      OpenAI__Model: "${OpenAI__Model:-}"
+      Jwt__ExpirationMinutes: "${JWT_EXPIRATION_MINUTES:-15}"
+      Auth__RefreshTokenDays: "${REFRESH_TOKEN_DAYS:-14}"
+      Auth__RefreshCookieName: "${REFRESH_COOKIE_NAME:-refresh_token}"
+      Gemini__ApiKey: "${GEMINI_API_KEY:-}"
+      Gemini__Model: "${GEMINI_MODEL:-}"
+      OpenAI__ApiKey: "${OPENAI_API_KEY:-}"
+      OpenAI__Model: "${OPENAI_MODEL:-}"
       Minio__Endpoint: minio:9000
       Minio__PublicEndpoint: "${MINIO_PUBLIC_ENDPOINT}"
-      Minio__AccessKey: "${MINIO_ROOT_USER}"
-      Minio__SecretKey: "${MINIO_ROOT_PASSWORD}"
+      Minio__AccessKey: "${MINIO_ACCESS_KEY}"
+      Minio__SecretKey: "${MINIO_SECRET_KEY}"
       Minio__Secure: "false"
       Minio__PublicSecure: "${MINIO_PUBLIC_SECURE:-false}"
       Minio__Bucket: "${MINIO_BUCKET:-templateapp}"
+      Minio__PresignedExpirySeconds: "${MINIO_PRESIGNED_EXPIRY_SECONDS:-900}"
     depends_on:
       - db
       - minio
@@ -43,8 +46,8 @@ services:
     ports:
       - "${MINIO_API_PORT:-9000}:9000"
     environment:
-      MINIO_ROOT_USER: "${MINIO_ROOT_USER}"
-      MINIO_ROOT_PASSWORD: "${MINIO_ROOT_PASSWORD}"
+      MINIO_ROOT_USER: "${MINIO_ACCESS_KEY}"
+      MINIO_ROOT_PASSWORD: "${MINIO_SECRET_KEY}"
     volumes:
       - minio_data:/data
 
