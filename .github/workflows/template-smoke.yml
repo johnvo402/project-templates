@@ -29,13 +29,13 @@ jobs:
             exit 1
           fi
 
-      - name: Reject Docker aliases in backend C#
+      - name: Reject dotenv loading and Docker aliases in backend C#
         shell: bash
         run: |
-          matches="$(grep -RInE --include='*.cs' '(AUTO_MIGRATE|DB_CONNECTION|JWT_(ISSUER|AUDIENCE|KEY|EXPIRATION_MINUTES)|REFRESH_(TOKEN_DAYS|COOKIE_NAME)|REDIS_(CONNECTION|INSTANCE_NAME)|MINIO_(PUBLIC_ENDPOINT|PUBLIC_SECURE|ACCESS_KEY|SECRET_KEY|BUCKET|PRESIGNED_EXPIRY_SECONDS)|GEMINI_(API_KEY|MODEL)|OPENAI_(API_KEY|MODEL))' templates/clean-api/src templates/clean-api/_variants || true)"
+          matches="$(grep -RInE --include='*.cs' '(DotEnvLoader|AUTO_MIGRATE|DB_CONNECTION|JWT_(ISSUER|AUDIENCE|KEY|EXPIRATION_MINUTES)|REFRESH_(TOKEN_DAYS|COOKIE_NAME)|REDIS_(CONNECTION|INSTANCE_NAME)|MINIO_(PUBLIC_ENDPOINT|PUBLIC_SECURE|ACCESS_KEY|SECRET_KEY|BUCKET|PRESIGNED_EXPIRY_SECONDS)|GEMINI_(API_KEY|MODEL)|OPENAI_(API_KEY|MODEL))' templates/clean-api/src templates/clean-api/_variants || true)"
           if [ -n "$matches" ]; then
             echo "$matches"
-            echo "Docker-facing aliases must stay in .env/Compose; backend C# must use canonical ASP.NET configuration only." >&2
+            echo "The backend must not load .env files or use Docker-facing aliases; keep aliases in .env/Compose and use canonical ASP.NET configuration in C#." >&2
             exit 1
           fi
 
