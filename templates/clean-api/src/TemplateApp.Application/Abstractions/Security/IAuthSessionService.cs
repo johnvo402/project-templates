@@ -17,6 +17,7 @@ public sealed record AuthSessionData(
 public interface IAuthSessionService
 {
     Task<Result<AuthSessionData>> RegisterAsync(string email, string password, string displayName, CancellationToken cancellationToken = default);
+    Task<Result<Guid>> CreateEmployeeAsync(string email, string password, string displayName, string role, CancellationToken cancellationToken = default);
     Task<Result<AuthSessionData>> LoginAsync(string email, string password, CancellationToken cancellationToken = default);
     Task<Result<AuthSessionData>> RefreshAsync(string refreshToken, CancellationToken cancellationToken = default);
     Task<Result> LogoutAsync(string refreshToken, CancellationToken cancellationToken = default);
