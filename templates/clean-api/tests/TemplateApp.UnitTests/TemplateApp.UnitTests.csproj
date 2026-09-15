@@ -4,9 +4,15 @@
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <PackageReference Include="xunit" />
     <PackageReference Include="xunit.runner.visualstudio"><PrivateAssets>all</PrivateAssets></PackageReference>
+    <!--#if (filter) -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" />
+    <!--#endif -->
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\TemplateApp.Domain\TemplateApp.Domain.csproj" />
     <ProjectReference Include="..\..\src\TemplateApp.Application\TemplateApp.Application.csproj" />
+    <!--#if (filter) -->
+    <ProjectReference Include="..\..\src\TemplateApp.Infrastructure\TemplateApp.Infrastructure.csproj" />
+    <!--#endif -->
   </ItemGroup>
 </Project>
