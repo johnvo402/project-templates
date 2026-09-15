@@ -1,4 +1,4 @@
-using TemplateApp.Application.Features.Common.Projections.Todos;
+using TemplateApp.Application.Features.Todos.GetTodos;
 using TemplateApp.Domain.Todos;
 using TemplateApp.Domain.Todos.Specifications;
 
@@ -26,9 +26,11 @@ public sealed class TodoSpecificationTests
     }
 
     [Fact]
-    public void TodoProjection_ShouldExposeEfTranslatableMappingExpression()
+    public void GetTodosMapping_ShouldExposeEfTranslatableSelector()
     {
-        Assert.NotNull(TodoProjection.MappingExpression);
-        Assert.Equal(typeof(TodoItem), TodoProjection.MappingExpression.Parameters.Single().Type);
+        var selector = GetTodosMapping.Selector();
+        Assert.NotNull(selector);
+        Assert.Equal(typeof(TodoItem), selector.Parameters.Single().Type);
+        Assert.Equal(typeof(GetTodosResponse), selector.ReturnType);
     }
 }
