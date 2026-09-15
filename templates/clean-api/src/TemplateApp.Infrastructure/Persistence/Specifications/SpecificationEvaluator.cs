@@ -1,3 +1,5 @@
+using System.Linq.Expressions;
+using System.Reflection;
 using Microsoft.EntityFrameworkCore;
 using TemplateApp.Domain.Common.Specifications;
 
@@ -21,9 +23,9 @@ internal static class SpecificationEvaluator
             query = query.Include(include);
 
         if (specification.OrderBy is not null)
-            query = query.OrderBy(specification.OrderBy);
+            query = ApplyOrdering(query, specification.OrderBy, descending: false);
         else if (specification.OrderByDescending is not null)
-            query = query.OrderByDescending(specification.OrderByDescending);
+            query = ApplyOrdering(query, specification.OrderByDescending, descending: true);
 
         if (specification.IsPagingEnabled)
         {
@@ -45,5 +47,26 @@ internal static class SpecificationEvaluator
     {
         return GetQuery(query, (ISpecification<TEntity>)specification, forceNoTracking)
             .Select(specification.Selector);
+    }
+
+    private static IOrderedQueryable<TEntity> ApplyOrdering<TEntity>(
+        IQueryable<TEntity> query,
+        LambdaExpression keySelector,
+        bool descending)
+        where TEntity : class
+    {
+        var methodName = descending
+            ? nameof(Queryable.OrderByDescending)
+            : nameof(Queryable.OrderBy);
+
+        var method = typeof(Queryable)
+            .GetMethods(BindingFlags.Public | BindingFlags.Static)
+            .Single(candidate =>
+                candidate.Name == methodName
+                && candidate.IsGenericMethodDefinition
+                && candidate.GetParameters().Length == 2)
+            .MakeGenericMethod(typeof(TEntity), keySelector.ReturnType);
+
+        return (IOrderedQueryable<TEntity>)method.Invoke(null, [query, keySelector])!;
     }
 }
