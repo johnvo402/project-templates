@@ -1,13 +1,10 @@
 using Mediator;
 using TemplateApp.Api.Authentication;
-using TemplateApp.Api.Configuration;
 using TemplateApp.Api.Endpoints;
 using TemplateApp.Api.Errors;
 using TemplateApp.Application;
 using TemplateApp.Application.Common.Behaviors;
 using TemplateApp.Infrastructure;
-
-DotEnvLoader.Load();
 
 var builder = WebApplication.CreateBuilder(args);
 
