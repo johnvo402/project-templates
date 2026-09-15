@@ -1,7 +1,7 @@
 using Mediator;
 using TemplateApp.Api.Authentication;
 using TemplateApp.Api.Responses;
-using TemplateApp.Application.Features.Todos.Common;
+using TemplateApp.Application.Features.Todos.Common.Models;
 using TemplateApp.Application.Features.Todos.CompleteTodo;
 using TemplateApp.Application.Features.Todos.CreateTodo;
 using TemplateApp.Application.Features.Todos.GetTodos;

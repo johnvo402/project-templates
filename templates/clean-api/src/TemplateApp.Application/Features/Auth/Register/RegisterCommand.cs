@@ -1,7 +1,7 @@
 using Mediator;
 using TemplateApp.Application.Abstractions.Security;
 using TemplateApp.Application.Common.Results;
-using TemplateApp.Application.Features.Auth.Common;
+using TemplateApp.Application.Features.Auth.Common.Models;
 
 namespace TemplateApp.Application.Features.Auth.Register;
 

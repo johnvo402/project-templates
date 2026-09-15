@@ -2,6 +2,7 @@ using Mediator;
 using TemplateApp.Application.Abstractions.Persistence;
 using TemplateApp.Application.Abstractions.Storage;
 using TemplateApp.Application.Common.Results;
+using TemplateApp.Application.Features.Profile.Common.Projections;
 using TemplateApp.Domain.Identity;
 using TemplateApp.Domain.Identity.Specifications;
 

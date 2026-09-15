@@ -2,8 +2,7 @@ using System.Security.Claims;
 using Mediator;
 using TemplateApp.Api.Responses;
 using TemplateApp.Application.Common.Results;
-using TemplateApp.Application.Features.Common.Projections.Identity;
-using TemplateApp.Application.Features.Profile.Common;
+using TemplateApp.Application.Features.Profile.Common.Models;
 using TemplateApp.Application.Features.Profile.GetProfile;
 using TemplateApp.Application.Features.Profile.UpdateProfile;
 
@@ -18,7 +17,7 @@ public static class ProfileEndpoints
         group.MapGet("/", async (ClaimsPrincipal principal, ISender sender, CancellationToken cancellationToken) =>
         {
             if (!TryGetUserId(principal, out var userId))
-                return Result<UserProfileProjection>.Failure(new Error("auth.invalid_subject", "Authenticated subject is invalid.", ErrorType.Unauthorized)).ToHttpResult();
+                return Result<GetProfileResponse>.Failure(new Error("auth.invalid_subject", "Authenticated subject is invalid.", ErrorType.Unauthorized)).ToHttpResult();
             var result = await sender.Send(new GetProfileQuery(userId), cancellationToken);
             return result.ToHttpResult();
         }).WithName("GetProfile");

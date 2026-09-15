@@ -2,8 +2,7 @@ using Mediator;
 using TemplateApp.Api.Authentication;
 using TemplateApp.Api.Querying;
 using TemplateApp.Api.Responses;
-using TemplateApp.Application.Features.Common.Projections.Todos;
-using TemplateApp.Application.Features.Todos.Common;
+using TemplateApp.Application.Features.Todos.Common.Models;
 using TemplateApp.Application.Features.Todos.CompleteTodo;
 using TemplateApp.Application.Features.Todos.CreateTodo;
 using TemplateApp.Application.Features.Todos.GetTodos;
@@ -18,7 +17,7 @@ public static class TodoEndpoints
 
         group.MapGet("/", async (HttpRequest request, ISender sender, CancellationToken cancellationToken) =>
         {
-            var parsed = LhsBracketQueryParser.Parse<TodoProjection>(request.Query);
+            var parsed = LhsBracketQueryParser.Parse<GetTodosResponse>(request.Query);
             if (parsed.IsFailure) return parsed.ToHttpResult();
             var result = await sender.Send(new GetTodosQuery(parsed.Value!), cancellationToken);
             return result.ToHttpResult();

@@ -2,6 +2,7 @@ using Mediator;
 using TemplateApp.Application.Abstractions.Persistence;
 using TemplateApp.Application.Abstractions.Storage;
 using TemplateApp.Application.Common.Results;
+using TemplateApp.Application.Features.Profile.Common.Projections;
 using TemplateApp.Domain.Identity;
 using TemplateApp.Domain.Identity.Specifications;
 
@@ -44,7 +45,7 @@ public sealed class UploadAvatarCommandHandler(IUnitOfWork unitOfWork, IObjectSt
         if (!string.IsNullOrWhiteSpace(previous) && !string.Equals(previous, objectName, StringComparison.Ordinal))
         {
             try { await storage.DeleteAsync(previous, cancellationToken); }
-            catch { /* Orphan cleanup can be handled asynchronously in a production app. */ }
+            catch { }
         }
 
         var url = await storage.GetPresignedDownloadUrlAsync(objectName, cancellationToken: cancellationToken);
