@@ -1,6 +1,8 @@
 MANIFEST.txt
+.github/workflows/template-smoke.yml
 JV.ProjectTemplates.csproj
 README.md
+tests/Assert-GeneratedRepositories.ps1
 templates/clean-api/.env.example
 templates/clean-api/.github/workflows/ci.yml
 templates/clean-api/.gitignore
@@ -86,6 +88,7 @@ templates/clean-api/_variants/filter/enabled/src/TemplateApp.Api/Endpoints/TodoE
 templates/clean-api/_variants/filter/enabled/src/TemplateApp.Api/Querying/LhsBracketQueryParser.cs
 templates/clean-api/_variants/filter/enabled/src/TemplateApp.Application/Abstractions/Persistence/IReadRepository.cs
 templates/clean-api/_variants/filter/enabled/src/TemplateApp.Application/Common/Querying/FilterNode.cs
+templates/clean-api/_variants/filter/enabled/src/TemplateApp.Application/Common/Querying/PaginationResponse.cs
 templates/clean-api/_variants/filter/enabled/src/TemplateApp.Application/Common/Querying/QueryParameters.cs
 templates/clean-api/_variants/filter/enabled/src/TemplateApp.Application/Features/Todos/GetTodos/GetTodosQuery.cs
 templates/clean-api/_variants/filter/enabled/src/TemplateApp.Application/Features/Todos/GetTodos/GetTodosQueryHandler.cs
@@ -97,6 +100,8 @@ templates/clean-api/_variants/framework/net10.0/Directory.Build.props
 templates/clean-api/_variants/framework/net10.0/Directory.Packages.props
 templates/clean-api/_variants/framework/net8.0/Directory.Build.props
 templates/clean-api/_variants/framework/net8.0/Directory.Packages.props
+templates/clean-api/_variants/framework/net8.0/src/TemplateApp.Api/Program.cs
+templates/clean-api/_variants/framework/net8.0/src/TemplateApp.Api/TemplateApp.Api.csproj
 templates/clean-api/_variants/framework/net9.0/Directory.Build.props
 templates/clean-api/_variants/framework/net9.0/Directory.Packages.props
 templates/clean-api/_variants/frontend-app/angular-ai-storage/src/app/app.component.ts

@@ -1,4 +1,3 @@
-using System.Text;
 using System.Text.Json.Serialization;
 
 namespace TemplateApp.Application.Common.Querying;
@@ -30,27 +29,6 @@ public sealed class PaginationResponse<T>
                 currentPage < totalPage,
                 currentPage > 1));
     }
-
-    public static PaginationResponse<T> ForCursor(
-        IReadOnlyList<T> data,
-        int totalCount,
-        int offset,
-        int pageSize)
-    {
-        var totalPage = totalCount == 0 ? 0 : (int)Math.Ceiling(totalCount / (double)pageSize);
-        var hasPrevious = offset > 0;
-        var hasNext = offset + pageSize < totalCount;
-        return new(
-            data,
-            new Paging(
-                totalPage,
-                null,
-                pageSize,
-                hasNext,
-                hasPrevious,
-                hasPrevious ? CursorCodec.Encode(Math.Max(0, offset - pageSize)) : null,
-                hasNext ? CursorCodec.Encode(offset + pageSize) : null));
-    }
 }
 
 public sealed class Paging
@@ -61,49 +39,18 @@ public sealed class Paging
     public int TotalPage { get; }
     public bool HasNextPage { get; }
     public bool HasPreviousPage { get; }
-    public string? Before { get; }
-    public string? After { get; }
 
     internal Paging(
         int totalPage,
         int? currentPage,
         int pageSize,
         bool hasNextPage,
-        bool hasPreviousPage,
-        string? before = null,
-        string? after = null)
+        bool hasPreviousPage)
     {
         CurrentPage = currentPage;
         PageSize = pageSize;
         TotalPage = totalPage;
         HasNextPage = hasNextPage;
         HasPreviousPage = hasPreviousPage;
-        Before = before;
-        After = after;
-    }
-}
-
-public static class CursorCodec
-{
-    private const string Prefix = "offset:";
-
-    public static string Encode(int offset)
-        => Convert.ToBase64String(Encoding.UTF8.GetBytes($"{Prefix}{Math.Max(offset, 0)}"));
-
-    public static bool TryDecode(string? cursor, out int offset)
-    {
-        offset = 0;
-        if (string.IsNullOrWhiteSpace(cursor)) return false;
-        try
-        {
-            var value = Encoding.UTF8.GetString(Convert.FromBase64String(cursor));
-            return value.StartsWith(Prefix, StringComparison.Ordinal)
-                && int.TryParse(value[Prefix.Length..], out offset)
-                && offset >= 0;
-        }
-        catch (FormatException)
-        {
-            return false;
-        }
     }
 }

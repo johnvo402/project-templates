@@ -8,7 +8,7 @@ using TemplateApp.Infrastructure.Persistence.Specifications;
 
 namespace TemplateApp.Infrastructure.Persistence.Repositories;
 
-internal sealed class EfReadRepository(AppDbContext dbContext) : IReadRepository<TEntity>
+internal sealed class EfReadRepository<TEntity>(AppDbContext dbContext) : IReadRepository<TEntity>
     where TEntity : class
 {
     private DbSet<TEntity> Set => dbContext.Set<TEntity>();

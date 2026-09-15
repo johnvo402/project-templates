@@ -1,0 +1,126 @@
+name: template-smoke
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: template-smoke-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  generated-projects:
+    name: ${{ matrix.label }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - label: net9 default
+            project: SmokeDefault
+            sdk: 9.0.x
+            arguments: --framework net9.0
+            frontend: false
+            filter: false
+            verifyRename: false
+          - label: net9 full stack
+            project: SmokeFull
+            sdk: 9.0.x
+            arguments: --framework net9.0 --frontend react --database postgresql --redis true --minio true --ai gemini --filter true --docker true
+            frontend: true
+            filter: true
+            verifyRename: true
+          - label: net9 filter disabled
+            project: SmokeNoFilter
+            sdk: 9.0.x
+            arguments: --framework net9.0 --filter false --ai none
+            frontend: false
+            filter: false
+            verifyRename: false
+          - label: net8 sqlserver
+            project: SmokeNet8SqlServer
+            sdk: 8.0.x
+            arguments: --framework net8.0 --database sqlserver --ai none
+            frontend: false
+            filter: false
+            verifyRename: false
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: ${{ matrix.sdk }}
+
+      - name: Setup Node
+        if: ${{ matrix.frontend }}
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          package-manager-cache: false
+
+      - name: Install local template and generate project
+        shell: bash
+        run: |
+          output="${RUNNER_TEMP}/template-smoke/${{ matrix.project }}"
+          dotnet new install ./templates/clean-api
+          dotnet new jv-api \
+            -n "${{ matrix.project }}" \
+            -o "$output" \
+            ${{ matrix.arguments }} \
+            --allow-scripts Yes
+          echo "SMOKE_OUTPUT=$output" >> "$GITHUB_ENV"
+
+      - name: Check generated repository declarations
+        shell: pwsh
+        run: ./tests/Assert-GeneratedRepositories.ps1 -ProjectRoot $env:SMOKE_OUTPUT
+
+      - name: Check filter-disabled output
+        if: ${{ matrix.filter == false }}
+        shell: bash
+        run: |
+          if grep -REn --include='*.cs' \
+            'QueryParameters|QueryableQueryEvaluator|CursorCodec|LhsBracketQueryParser|FilterNode' \
+            "$SMOKE_OUTPUT/src"; then
+            echo "Filter-only infrastructure was generated with --filter false." >&2
+            exit 1
+          fi
+
+      - name: Check full-stack template transformations
+        if: ${{ matrix.verifyRename }}
+        shell: bash
+        run: |
+          if find "$SMOKE_OUTPUT" -type d -name _variants -print -quit | grep -q .; then
+            echo "The _variants source directory was copied into generated output." >&2
+            exit 1
+          fi
+          if find "$SMOKE_OUTPUT" -type f \
+            \( -name '*.cs' -o -name '*.csproj' -o -name '*.sln' \) \
+            -print0 | xargs -0 grep -En 'TemplateApp[._/]' ; then
+            echo "Untransformed TemplateApp references remain in generated project content." >&2
+            exit 1
+          fi
+
+      - name: Restore backend
+        run: dotnet restore "$SMOKE_OUTPUT/${{ matrix.project }}.sln"
+
+      - name: Build backend
+        run: dotnet build "$SMOKE_OUTPUT/${{ matrix.project }}.sln" -c Release --no-restore
+
+      - name: Test backend
+        run: dotnet test "$SMOKE_OUTPUT/${{ matrix.project }}.sln" -c Release --no-build
+
+      - name: Install frontend dependencies
+        if: ${{ matrix.frontend }}
+        working-directory: ${{ env.SMOKE_OUTPUT }}/frontend
+        run: npm install
+
+      - name: Build frontend
+        if: ${{ matrix.frontend }}
+        working-directory: ${{ env.SMOKE_OUTPUT }}/frontend
+        run: npm run build

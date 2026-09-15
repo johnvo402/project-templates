@@ -8,7 +8,7 @@ using TemplateApp.Infrastructure.Persistence.Specifications;
 
 namespace TemplateApp.Infrastructure.Persistence.Repositories;
 
-internal sealed class EfRepository(AppDbContext dbContext) : IAsyncRepository<TEntity>
+internal sealed class EfRepository<TEntity>(AppDbContext dbContext) : IAsyncRepository<TEntity>
     where TEntity : class
 {
     private DbSet<TEntity> Set => dbContext.Set<TEntity>();
