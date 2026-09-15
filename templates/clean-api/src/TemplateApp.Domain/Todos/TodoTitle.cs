@@ -6,9 +6,14 @@ public sealed class TodoTitle : ValueObject
 {
     public const int MaxLength = 300;
 
+    private TodoTitle()
+    {
+        Value = string.Empty;
+    }
+
     private TodoTitle(string value) => Value = value;
 
-    public string Value { get; }
+    public string Value { get; private set; }
 
     public static TodoTitle Create(string value)
     {
