@@ -17,14 +17,13 @@ public sealed class SpecificationBuilder<T>(Specification<T> specification)
         return this;
     }
 
-    public SpecificationBuilder<T> OrderBy(Expression<Func<T, object?>> orderByExpression)
+    public SpecificationBuilder<T> OrderBy<TKey>(Expression<Func<T, TKey>> orderByExpression)
     {
         specification.SetOrderBy(orderByExpression);
         return this;
     }
 
-    public SpecificationBuilder<T> OrderByDescending(
-        Expression<Func<T, object?>> orderByDescendingExpression)
+    public SpecificationBuilder<T> OrderByDescending<TKey>(Expression<Func<T, TKey>> orderByDescendingExpression)
     {
         specification.SetOrderByDescending(orderByDescendingExpression);
         return this;
