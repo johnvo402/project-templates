@@ -1,0 +1,32 @@
+.pagination-pages {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: .35rem;
+  flex-wrap: wrap;
+}
+
+.pagination-pages .page-number {
+  min-width: 2.35rem;
+  padding-inline: .55rem;
+}
+
+.pagination-pages .page-number.active {
+  color: #fff;
+  border-color: #5664ed;
+  background: linear-gradient(135deg, #6674ff, #4f5be0);
+  box-shadow: 0 5px 16px rgba(79, 91, 224, .2);
+}
+
+.pagination-ellipsis {
+  min-width: 1.5rem;
+  text-align: center;
+  color: #7a8799;
+  user-select: none;
+}
+
+@media (max-width: 820px) {
+  .pagination-pages {
+    justify-content: center;
+  }
+}
