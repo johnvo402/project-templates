@@ -8,6 +8,7 @@ import { TodoStore } from './todo.store';
   selector: 'app-todo-page',
   standalone: true,
   imports: [FormsModule],
+  styleUrls: ['../../shared/pagination.css'],
   template: `<section class="card span-2">
     <div class="section-heading"><div><p class="eyebrow">Productivity</p><h2>Todo list</h2></div><button class="ghost" (click)="store.load()">Refresh</button></div>
     @if(auth.can('todos.write')){<form class="inline-form" (ngSubmit)="create()"><input name="title" [(ngModel)]="title" placeholder="What needs to be done?"/><button class="primary">Add task</button></form>}
