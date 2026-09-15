@@ -1,0 +1,66 @@
+set dotenv-load := true
+set export := true
+
+default:
+    @just --list
+
+restore:
+    dotnet restore TemplateApp.sln
+
+build:
+    dotnet build TemplateApp.sln
+
+test:
+    dotnet test TemplateApp.sln
+
+run:
+    dotnet run --project src/TemplateApp.Api
+
+migrate name:
+    dotnet ef migrations add {{name}} --project src/TemplateApp.Infrastructure --startup-project src/TemplateApp.Migrations
+
+migrate-remove:
+    dotnet ef migrations remove --project src/TemplateApp.Infrastructure --startup-project src/TemplateApp.Migrations
+
+db-update:
+    dotnet ef database update --project src/TemplateApp.Infrastructure --startup-project src/TemplateApp.Migrations
+
+migrations:
+    dotnet ef migrations list --project src/TemplateApp.Infrastructure --startup-project src/TemplateApp.Migrations
+
+migration-script output="migrations.sql":
+    dotnet ef migrations script --idempotent --output {{output}} --project src/TemplateApp.Infrastructure --startup-project src/TemplateApp.Migrations
+
+docker-up *services:
+    docker compose -f compose.yaml -f compose.ai.yaml up --build {{services}}
+
+docker-up-d *services:
+    docker compose -f compose.yaml -f compose.ai.yaml up -d --build {{services}}
+
+docker-down:
+    docker compose -f compose.yaml -f compose.ai.yaml down
+
+docker-clean:
+    docker compose -f compose.yaml -f compose.ai.yaml down -v --remove-orphans
+
+docker-logs *services:
+    docker compose -f compose.yaml -f compose.ai.yaml logs -f {{services}}
+
+docker-services:
+    docker compose -f compose.yaml -f compose.ai.yaml config --services
+
+docker-ps *services:
+    docker compose -f compose.yaml -f compose.ai.yaml ps {{services}}
+
+docker-stop *services:
+    docker compose -f compose.yaml -f compose.ai.yaml stop {{services}}
+
+docker-restart *services:
+    docker compose -f compose.yaml -f compose.ai.yaml restart {{services}}
+
+prod-up:
+    docker compose --env-file .env.production -f compose.prod.yaml pull
+    docker compose --env-file .env.production -f compose.prod.yaml up -d
+
+prod-down:
+    docker compose --env-file .env.production -f compose.prod.yaml down

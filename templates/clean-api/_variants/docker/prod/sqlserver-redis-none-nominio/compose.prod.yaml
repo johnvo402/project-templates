@@ -1,0 +1,41 @@
+services:
+  api:
+    image: "${GHCR_IMAGE_PREFIX:-ghcr.io/johnvo/templateapp}-api:${IMAGE_TAG:-prod}"
+    restart: unless-stopped
+    ports:
+      - "${API_PORT:-8080}:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__Default: "Server=db,1433;Database=TemplateApp;User Id=sa;Password=${DB_PASSWORD};TrustServerCertificate=True"
+      Jwt__Key: "${JWT_KEY}"
+      GEMINI_API_KEY: "${GEMINI_API_KEY:-}"
+      GEMINI_MODEL: "${GEMINI_MODEL:-}"
+      Gemini__ApiKey: "${Gemini__ApiKey:-}"
+      Gemini__Model: "${Gemini__Model:-}"
+      OPENAI_API_KEY: "${OPENAI_API_KEY:-}"
+      OPENAI_MODEL: "${OPENAI_MODEL:-}"
+      OpenAI__ApiKey: "${OpenAI__ApiKey:-}"
+      OpenAI__Model: "${OpenAI__Model:-}"
+      Redis__Configuration: redis:6379
+    depends_on:
+      - db
+      - redis
+
+  db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    restart: unless-stopped
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "${DB_PASSWORD}"
+    volumes:
+      - db_data:/var/opt/mssql
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+
+volumes:
+  db_data: {}
+  redis_data: {}

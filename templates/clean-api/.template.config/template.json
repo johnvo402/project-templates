@@ -1,0 +1,592 @@
+{
+  "$schema": "http://json.schemastore.org/template",
+  "author": "JohnVo",
+  "classifications": [
+    "Web",
+    "API",
+    "DDD",
+    "Clean Architecture",
+    "Vertical Slice",
+    "CQRS"
+  ],
+  "identity": "JohnVo.ProjectTemplates.DddCleanApi",
+  "groupIdentity": "JohnVo.ProjectTemplates.DddCleanApi",
+  "name": "JohnVo DDD Clean API",
+  "shortName": "jv-api",
+  "sourceName": "TemplateApp",
+  "preferNameDirectory": true,
+  "tags": {
+    "language": "C#",
+    "type": "solution"
+  },
+  "symbols": {
+    "framework": {
+      "type": "parameter",
+      "datatype": "choice",
+      "defaultValue": "net10.0",
+      "description": "Target .NET framework. Supports .NET 8 and newer.",
+      "choices": [
+        {
+          "choice": "net8.0",
+          "description": ".NET 8"
+        },
+        {
+          "choice": "net9.0",
+          "description": ".NET 9"
+        },
+        {
+          "choice": "net10.0",
+          "description": ".NET 10 (default / current LTS)"
+        }
+      ]
+    },
+    "frontend": {
+      "type": "parameter",
+      "datatype": "choice",
+      "defaultValue": "none",
+      "description": "Frontend to generate.",
+      "choices": [
+        {
+          "choice": "none",
+          "description": "Backend only"
+        },
+        {
+          "choice": "angular",
+          "description": "Angular SPA"
+        },
+        {
+          "choice": "react",
+          "description": "React + Vite SPA"
+        }
+      ]
+    },
+    "database": {
+      "type": "parameter",
+      "datatype": "choice",
+      "defaultValue": "sqlserver",
+      "description": "EF Core database provider.",
+      "choices": [
+        {
+          "choice": "sqlserver",
+          "description": "Microsoft SQL Server"
+        },
+        {
+          "choice": "postgresql",
+          "description": "PostgreSQL via Npgsql"
+        }
+      ]
+    },
+    "redis": {
+      "type": "parameter",
+      "datatype": "bool",
+      "defaultValue": "false",
+      "description": "Add Redis distributed cache."
+    },
+    "docker": {
+      "type": "parameter",
+      "datatype": "bool",
+      "defaultValue": "false",
+      "description": "Add Dockerfiles and compose.yaml."
+    },
+    "filter": {
+      "type": "parameter",
+      "datatype": "bool",
+      "defaultValue": "false",
+      "description": "Add VietWash-style LHS-bracket filtering, keyword search, sorting, page/cursor pagination."
+    },
+    "minio": {
+      "type": "parameter",
+      "datatype": "bool",
+      "defaultValue": "false",
+      "description": "Add MinIO / S3-compatible object storage integration."
+    },
+    "ai": {
+      "type": "parameter",
+      "datatype": "choice",
+      "defaultValue": "gemini",
+      "description": "AI provider integration. Gemini is enabled by default.",
+      "choices": [
+        {
+          "choice": "gemini",
+          "description": "Google Gemini via Google.GenAI (default)"
+        },
+        {
+          "choice": "openai",
+          "description": "OpenAI via the official OpenAI .NET SDK"
+        },
+        {
+          "choice": "none",
+          "description": "Do not generate AI provider integration"
+        }
+      ]
+    }
+  },
+  "sources": [
+    {
+      "source": "./",
+      "target": "./",
+      "exclude": [
+        "_variants/**/*",
+        ".template.config/**/*",
+        "**/[Bb]in/**",
+        "**/[Oo]bj/**"
+      ]
+    },
+    {
+      "source": "_variants/framework/net8.0",
+      "target": "./",
+      "condition": "(framework == \"net8.0\")"
+    },
+    {
+      "source": "_variants/framework/net9.0",
+      "target": "./",
+      "condition": "(framework == \"net9.0\")"
+    },
+    {
+      "source": "_variants/framework/net10.0",
+      "target": "./",
+      "condition": "(framework == \"net10.0\")"
+    },
+    {
+      "source": "_variants/frontend/angular",
+      "target": "frontend",
+      "condition": "(frontend == \"angular\")"
+    },
+    {
+      "source": "_variants/frontend/react",
+      "target": "frontend",
+      "condition": "(frontend == \"react\")"
+    },
+    {
+      "source": "_variants/frontend-filter/react",
+      "target": "frontend",
+      "condition": "(frontend == \"react\") && filter"
+    },
+    {
+      "source": "_variants/frontend-filter/angular",
+      "target": "frontend",
+      "condition": "(frontend == \"angular\") && filter"
+    },
+    {
+      "source": "_variants/frontend-features/react-ai",
+      "target": "frontend",
+      "condition": "(frontend == \"react\") && (ai != \"none\")"
+    },
+    {
+      "source": "_variants/frontend-features/react-storage",
+      "target": "frontend",
+      "condition": "(frontend == \"react\") && minio"
+    },
+    {
+      "source": "_variants/frontend-features/angular-ai",
+      "target": "frontend",
+      "condition": "(frontend == \"angular\") && (ai != \"none\")"
+    },
+    {
+      "source": "_variants/frontend-features/angular-storage",
+      "target": "frontend",
+      "condition": "(frontend == \"angular\") && minio"
+    },
+    {
+      "source": "_variants/frontend-app/react-base",
+      "target": "frontend",
+      "condition": "(frontend == \"react\") && (ai == \"none\") && (!minio)"
+    },
+    {
+      "source": "_variants/frontend-app/react-ai",
+      "target": "frontend",
+      "condition": "(frontend == \"react\") && (ai != \"none\") && (!minio)"
+    },
+    {
+      "source": "_variants/frontend-app/react-storage",
+      "target": "frontend",
+      "condition": "(frontend == \"react\") && (ai == \"none\") && minio"
+    },
+    {
+      "source": "_variants/frontend-app/react-ai-storage",
+      "target": "frontend",
+      "condition": "(frontend == \"react\") && (ai != \"none\") && minio"
+    },
+    {
+      "source": "_variants/frontend-app/angular-base",
+      "target": "frontend",
+      "condition": "(frontend == \"angular\") && (ai == \"none\") && (!minio)"
+    },
+    {
+      "source": "_variants/frontend-app/angular-ai",
+      "target": "frontend",
+      "condition": "(frontend == \"angular\") && (ai != \"none\") && (!minio)"
+    },
+    {
+      "source": "_variants/frontend-app/angular-storage",
+      "target": "frontend",
+      "condition": "(frontend == \"angular\") && (ai == \"none\") && minio"
+    },
+    {
+      "source": "_variants/frontend-app/angular-ai-storage",
+      "target": "frontend",
+      "condition": "(frontend == \"angular\") && (ai != \"none\") && minio"
+    },
+    {
+      "source": "_variants/migrations/sqlserver",
+      "target": "./",
+      "condition": "(database == \"sqlserver\")"
+    },
+    {
+      "source": "_variants/migrations/postgresql",
+      "target": "./",
+      "condition": "(database == \"postgresql\")"
+    },
+    {
+      "source": "_variants/infrastructure/sqlserver-noredis",
+      "target": "./",
+      "condition": "(database == \"sqlserver\") && (!redis)"
+    },
+    {
+      "source": "_variants/infrastructure/sqlserver-redis",
+      "target": "./",
+      "condition": "(database == \"sqlserver\") && redis"
+    },
+    {
+      "source": "_variants/infrastructure/postgresql-noredis",
+      "target": "./",
+      "condition": "(database == \"postgresql\") && (!redis)"
+    },
+    {
+      "source": "_variants/infrastructure/postgresql-redis",
+      "target": "./",
+      "condition": "(database == \"postgresql\") && redis"
+    },
+    {
+      "source": "_variants/cache/redis",
+      "target": "./",
+      "condition": "redis"
+    },
+    {
+      "source": "_variants/filter/enabled",
+      "target": "./",
+      "condition": "filter"
+    },
+    {
+      "source": "_variants/minio/enabled",
+      "target": "./",
+      "condition": "minio"
+    },
+    {
+      "source": "_variants/ai/common",
+      "target": "./",
+      "condition": "(ai != \"none\")"
+    },
+    {
+      "source": "_variants/ai/gemini",
+      "target": "./",
+      "condition": "(ai == \"gemini\")"
+    },
+    {
+      "source": "_variants/ai/openai",
+      "target": "./",
+      "condition": "(ai == \"openai\")"
+    },
+    {
+      "source": "_variants/docker/common",
+      "target": "./",
+      "condition": "docker"
+    },
+    {
+      "source": "_variants/docker/framework/net8.0",
+      "target": "./",
+      "condition": "docker && (framework == \"net8.0\")"
+    },
+    {
+      "source": "_variants/docker/framework/net9.0",
+      "target": "./",
+      "condition": "docker && (framework == \"net9.0\")"
+    },
+    {
+      "source": "_variants/docker/framework/net10.0",
+      "target": "./",
+      "condition": "docker && (framework == \"net10.0\")"
+    },
+    {
+      "source": "_variants/docker/frontend/angular",
+      "target": "frontend",
+      "condition": "docker && (frontend == \"angular\")"
+    },
+    {
+      "source": "_variants/docker/frontend/react",
+      "target": "frontend",
+      "condition": "docker && (frontend == \"react\")"
+    },
+    {
+      "source": "_variants/docker/compose/sqlserver-noredis-none",
+      "target": "./",
+      "condition": "docker && (database == \"sqlserver\") && (!redis) && (frontend == \"none\")"
+    },
+    {
+      "source": "_variants/docker/compose/sqlserver-noredis-angular",
+      "target": "./",
+      "condition": "docker && (database == \"sqlserver\") && (!redis) && (frontend == \"angular\")"
+    },
+    {
+      "source": "_variants/docker/compose/sqlserver-noredis-react",
+      "target": "./",
+      "condition": "docker && (database == \"sqlserver\") && (!redis) && (frontend == \"react\")"
+    },
+    {
+      "source": "_variants/docker/compose/sqlserver-redis-none",
+      "target": "./",
+      "condition": "docker && (database == \"sqlserver\") && redis && (frontend == \"none\")"
+    },
+    {
+      "source": "_variants/docker/compose/sqlserver-redis-angular",
+      "target": "./",
+      "condition": "docker && (database == \"sqlserver\") && redis && (frontend == \"angular\")"
+    },
+    {
+      "source": "_variants/docker/compose/sqlserver-redis-react",
+      "target": "./",
+      "condition": "docker && (database == \"sqlserver\") && redis && (frontend == \"react\")"
+    },
+    {
+      "source": "_variants/docker/compose/postgresql-noredis-none",
+      "target": "./",
+      "condition": "docker && (database == \"postgresql\") && (!redis) && (frontend == \"none\")"
+    },
+    {
+      "source": "_variants/docker/compose/postgresql-noredis-angular",
+      "target": "./",
+      "condition": "docker && (database == \"postgresql\") && (!redis) && (frontend == \"angular\")"
+    },
+    {
+      "source": "_variants/docker/compose/postgresql-noredis-react",
+      "target": "./",
+      "condition": "docker && (database == \"postgresql\") && (!redis) && (frontend == \"react\")"
+    },
+    {
+      "source": "_variants/docker/compose/postgresql-redis-none",
+      "target": "./",
+      "condition": "docker && (database == \"postgresql\") && redis && (frontend == \"none\")"
+    },
+    {
+      "source": "_variants/docker/compose/postgresql-redis-angular",
+      "target": "./",
+      "condition": "docker && (database == \"postgresql\") && redis && (frontend == \"angular\")"
+    },
+    {
+      "source": "_variants/docker/compose/postgresql-redis-react",
+      "target": "./",
+      "condition": "docker && (database == \"postgresql\") && redis && (frontend == \"react\")"
+    },
+    {
+      "source": "_variants/docker/optional/minio",
+      "target": "./",
+      "condition": "docker && minio"
+    },
+    {
+      "source": "_variants/docker/optional/ai/gemini",
+      "target": "./",
+      "condition": "docker && (ai == \"gemini\")"
+    },
+    {
+      "source": "_variants/docker/optional/ai/openai",
+      "target": "./",
+      "condition": "docker && (ai == \"openai\")"
+    },
+    {
+      "source": "_variants/docker/ghcr/none",
+      "target": "./",
+      "condition": "docker && (frontend == \"none\")"
+    },
+    {
+      "source": "_variants/docker/ghcr/angular",
+      "target": "./",
+      "condition": "docker && (frontend == \"angular\")"
+    },
+    {
+      "source": "_variants/docker/ghcr/react",
+      "target": "./",
+      "condition": "docker && (frontend == \"react\")"
+    },
+    {
+      "source": "_variants/docker/prod/sqlserver-noredis-none-nominio",
+      "target": "./",
+      "condition": "docker && (database == \"sqlserver\") && (!redis) && (frontend == \"none\") && (!minio)"
+    },
+    {
+      "source": "_variants/docker/prod/sqlserver-noredis-none-minio",
+      "target": "./",
+      "condition": "docker && (database == \"sqlserver\") && (!redis) && (frontend == \"none\") && minio"
+    },
+    {
+      "source": "_variants/docker/prod/sqlserver-noredis-angular-nominio",
+      "target": "./",
+      "condition": "docker && (database == \"sqlserver\") && (!redis) && (frontend == \"angular\") && (!minio)"
+    },
+    {
+      "source": "_variants/docker/prod/sqlserver-noredis-angular-minio",
+      "target": "./",
+      "condition": "docker && (database == \"sqlserver\") && (!redis) && (frontend == \"angular\") && minio"
+    },
+    {
+      "source": "_variants/docker/prod/sqlserver-noredis-react-nominio",
+      "target": "./",
+      "condition": "docker && (database == \"sqlserver\") && (!redis) && (frontend == \"react\") && (!minio)"
+    },
+    {
+      "source": "_variants/docker/prod/sqlserver-noredis-react-minio",
+      "target": "./",
+      "condition": "docker && (database == \"sqlserver\") && (!redis) && (frontend == \"react\") && minio"
+    },
+    {
+      "source": "_variants/docker/prod/sqlserver-redis-none-nominio",
+      "target": "./",
+      "condition": "docker && (database == \"sqlserver\") && redis && (frontend == \"none\") && (!minio)"
+    },
+    {
+      "source": "_variants/docker/prod/sqlserver-redis-none-minio",
+      "target": "./",
+      "condition": "docker && (database == \"sqlserver\") && redis && (frontend == \"none\") && minio"
+    },
+    {
+      "source": "_variants/docker/prod/sqlserver-redis-angular-nominio",
+      "target": "./",
+      "condition": "docker && (database == \"sqlserver\") && redis && (frontend == \"angular\") && (!minio)"
+    },
+    {
+      "source": "_variants/docker/prod/sqlserver-redis-angular-minio",
+      "target": "./",
+      "condition": "docker && (database == \"sqlserver\") && redis && (frontend == \"angular\") && minio"
+    },
+    {
+      "source": "_variants/docker/prod/sqlserver-redis-react-nominio",
+      "target": "./",
+      "condition": "docker && (database == \"sqlserver\") && redis && (frontend == \"react\") && (!minio)"
+    },
+    {
+      "source": "_variants/docker/prod/sqlserver-redis-react-minio",
+      "target": "./",
+      "condition": "docker && (database == \"sqlserver\") && redis && (frontend == \"react\") && minio"
+    },
+    {
+      "source": "_variants/docker/prod/postgresql-noredis-none-nominio",
+      "target": "./",
+      "condition": "docker && (database == \"postgresql\") && (!redis) && (frontend == \"none\") && (!minio)"
+    },
+    {
+      "source": "_variants/docker/prod/postgresql-noredis-none-minio",
+      "target": "./",
+      "condition": "docker && (database == \"postgresql\") && (!redis) && (frontend == \"none\") && minio"
+    },
+    {
+      "source": "_variants/docker/prod/postgresql-noredis-angular-nominio",
+      "target": "./",
+      "condition": "docker && (database == \"postgresql\") && (!redis) && (frontend == \"angular\") && (!minio)"
+    },
+    {
+      "source": "_variants/docker/prod/postgresql-noredis-angular-minio",
+      "target": "./",
+      "condition": "docker && (database == \"postgresql\") && (!redis) && (frontend == \"angular\") && minio"
+    },
+    {
+      "source": "_variants/docker/prod/postgresql-noredis-react-nominio",
+      "target": "./",
+      "condition": "docker && (database == \"postgresql\") && (!redis) && (frontend == \"react\") && (!minio)"
+    },
+    {
+      "source": "_variants/docker/prod/postgresql-noredis-react-minio",
+      "target": "./",
+      "condition": "docker && (database == \"postgresql\") && (!redis) && (frontend == \"react\") && minio"
+    },
+    {
+      "source": "_variants/docker/prod/postgresql-redis-none-nominio",
+      "target": "./",
+      "condition": "docker && (database == \"postgresql\") && redis && (frontend == \"none\") && (!minio)"
+    },
+    {
+      "source": "_variants/docker/prod/postgresql-redis-none-minio",
+      "target": "./",
+      "condition": "docker && (database == \"postgresql\") && redis && (frontend == \"none\") && minio"
+    },
+    {
+      "source": "_variants/docker/prod/postgresql-redis-angular-nominio",
+      "target": "./",
+      "condition": "docker && (database == \"postgresql\") && redis && (frontend == \"angular\") && (!minio)"
+    },
+    {
+      "source": "_variants/docker/prod/postgresql-redis-angular-minio",
+      "target": "./",
+      "condition": "docker && (database == \"postgresql\") && redis && (frontend == \"angular\") && minio"
+    },
+    {
+      "source": "_variants/docker/prod/postgresql-redis-react-nominio",
+      "target": "./",
+      "condition": "docker && (database == \"postgresql\") && redis && (frontend == \"react\") && (!minio)"
+    },
+    {
+      "source": "_variants/docker/prod/postgresql-redis-react-minio",
+      "target": "./",
+      "condition": "docker && (database == \"postgresql\") && redis && (frontend == \"react\") && minio"
+    },
+    {
+      "source": "_variants/docker/just/nominio-none",
+      "target": "./",
+      "condition": "docker && (!minio) && (ai == \"none\")"
+    },
+    {
+      "source": "_variants/docker/just/nominio-gemini",
+      "target": "./",
+      "condition": "docker && (!minio) && (ai == \"gemini\")"
+    },
+    {
+      "source": "_variants/docker/just/nominio-openai",
+      "target": "./",
+      "condition": "docker && (!minio) && (ai == \"openai\")"
+    },
+    {
+      "source": "_variants/docker/just/minio-none",
+      "target": "./",
+      "condition": "docker && minio && (ai == \"none\")"
+    },
+    {
+      "source": "_variants/docker/just/minio-gemini",
+      "target": "./",
+      "condition": "docker && minio && (ai == \"gemini\")"
+    },
+    {
+      "source": "_variants/docker/just/minio-openai",
+      "target": "./",
+      "condition": "docker && minio && (ai == \"openai\")"
+    }
+  ],
+  "guids": [
+    "B2222222-2222-4222-8222-222222222222",
+    "C3333333-3333-4333-8333-333333333333",
+    "D4444444-4444-4444-8444-444444444444",
+    "E5555555-5555-4555-8555-555555555555",
+    "F6666666-6666-4666-8666-666666666666",
+    "A7777777-7777-4777-8777-777777777777"
+  ],
+  "primaryOutputs": [
+    {
+      "path": "TemplateApp.sln"
+    }
+  ],
+  "postActions": [
+    {
+      "description": "Initialize Git repository",
+      "manualInstructions": [
+        {
+          "text": "Run 'git init -b main' in the generated project directory."
+        }
+      ],
+      "actionId": "3A7C4B45-1F5D-4A30-959A-51B88E82B5D2",
+      "args": {
+        "executable": "git",
+        "args": "init -b main",
+        "redirectStandardOutput": false,
+        "redirectStandardError": false
+      },
+      "continueOnError": true
+    }
+  ]
+}

@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\TemplateApp.Application\TemplateApp.Application.csproj" />
+    <ProjectReference Include="..\TemplateApp.Domain\TemplateApp.Domain.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />
+<PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" />
+
+    <!--#if (database == "sqlserver") -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" />
+    <!--#endif -->
+    <!--#if (database == "postgresql") -->
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+    <!--#endif -->
+
+    <!--#if (redis) -->
+    <PackageReference Include="Microsoft.Extensions.Caching.StackExchangeRedis" />
+    <!--#endif -->
+    <!--#if (minio) -->
+    <PackageReference Include="Minio" />
+    <!--#endif -->
+    <!--#if (ai == "gemini") -->
+    <PackageReference Include="Google.GenAI" />
+    <!--#endif -->
+    <!--#if (ai == "openai") -->
+    <PackageReference Include="OpenAI" />
+    <!--#endif -->
+  </ItemGroup>
+</Project>

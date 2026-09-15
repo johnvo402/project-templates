@@ -1,0 +1,11 @@
+FROM node:24-alpine AS build
+WORKDIR /app
+COPY frontend/package*.json ./
+RUN npm install
+COPY frontend/ .
+RUN npm run build
+
+FROM nginx:1.29-alpine
+COPY --from=build /app/dist/templateapp/browser /usr/share/nginx/html
+COPY frontend/nginx.conf /etc/nginx/conf.d/default.conf
+EXPOSE 80
