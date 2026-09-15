@@ -32,12 +32,34 @@ public sealed class AuthSessionService(
             return Result<AuthSessionData>.Failure(new Error("auth.email_taken", "Email is already registered.", ErrorType.Conflict));
 
         var hasAnyUser = await dbContext.Users.AnyAsync(cancellationToken);
-        var bootstrapRole = hasAnyUser ? AppRoles.User : AppRoles.Admin;
+        var bootstrapRole = hasAnyUser ? AppRoles.Staff : AppRoles.Admin;
         var user = AppUser.Create(email.Trim(), normalized, passwordHasher.Hash(password), bootstrapRole, displayName);
         dbContext.Users.Add(user);
         var session = IssueSession(user, DateTimeOffset.UtcNow);
         await dbContext.SaveChangesAsync(cancellationToken);
         return Result<AuthSessionData>.Success(session);
+    }
+
+    public async Task<Result<Guid>> CreateEmployeeAsync(
+        string email,
+        string password,
+        string displayName,
+        string role,
+        CancellationToken cancellationToken = default)
+    {
+        var validation = ValidateCredentials(email, password);
+        if (validation is not null) return Result<Guid>.Failure(validation);
+        if (!AppRoles.IsValid(role))
+            return Result<Guid>.Failure(new Error("employees.invalid-role", "Role must be Admin, Manager or Staff.", ErrorType.Validation));
+
+        var normalized = NormalizeEmail(email);
+        if (await dbContext.Users.AnyAsync(x => x.NormalizedEmail == normalized, cancellationToken))
+            return Result<Guid>.Failure(new Error("employees.email-taken", "Email is already registered.", ErrorType.Conflict));
+
+        var user = AppUser.Create(email.Trim(), normalized, passwordHasher.Hash(password), role, displayName);
+        dbContext.Users.Add(user);
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return Result<Guid>.Success(user.Id.Value);
     }
 
     public async Task<Result<AuthSessionData>> LoginAsync(
@@ -128,7 +150,6 @@ public sealed class AuthSessionService(
             return Result<AuthenticatedUser>.Failure(new Error("user.not_found", "User was not found.", ErrorType.NotFound));
         return Result<AuthenticatedUser>.Success(ToAuthenticatedUser(user));
     }
-
 
     public async Task<Result> ChangeRoleAsync(Guid userId, string role, CancellationToken cancellationToken = default)
     {
