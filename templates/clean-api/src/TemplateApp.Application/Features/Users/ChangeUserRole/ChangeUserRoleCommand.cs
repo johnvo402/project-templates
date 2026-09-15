@@ -1,6 +1,6 @@
 using Mediator;
 using TemplateApp.Application.Common.Results;
-using TemplateApp.Application.Features.Users.Common;
+using TemplateApp.Application.Features.Users.Common.Models;
 
 namespace TemplateApp.Application.Features.Users.ChangeUserRole;
 

@@ -1,7 +1,7 @@
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using TemplateApp.Application.Common.Querying;
-using TemplateApp.Application.Features.Common.Projections.Todos;
+using TemplateApp.Application.Features.Todos.GetTodos;
 using TemplateApp.Domain.Common.Specifications;
 using TemplateApp.Domain.Todos;
 using TemplateApp.Domain.Todos.Specifications;
@@ -42,7 +42,7 @@ public sealed class LhsQueryTranslationTests
         var repository = new EfReadRepository<TodoItem>(dbContext);
         var page = await repository.PagedListAsync(
             new NoSortTodoSpecification(),
-            TodoProjection.MappingExpression,
+            GetTodosMapping.Selector(),
             query);
 
         var todo = Assert.Single(page.Data);

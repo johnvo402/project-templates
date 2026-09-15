@@ -1,11 +1,13 @@
 using FluentValidation;
+using TemplateApp.Application.Features.AI.Common.Models;
 
 namespace TemplateApp.Application.Features.AI.GenerateText;
 
 public sealed class GenerateAiTextCommandValidator : AbstractValidator<GenerateAiTextCommand>
 {
-    public GenerateAiTextCommandValidator()
+    public GenerateAiTextCommandValidator(IValidator<AiPromptModel> modelValidator)
     {
-        RuleFor(command => command.Model.Prompt).NotEmpty().MaximumLength(12_000);
+        RuleFor(command => command.Model).NotNull();
+        RuleFor(command => command.Model).SetValidator(modelValidator);
     }
 }

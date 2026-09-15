@@ -2,7 +2,7 @@ using Mediator;
 using TemplateApp.Api.Authentication;
 using TemplateApp.Api.Responses;
 using TemplateApp.Application.Features.Users.ChangeUserRole;
-using TemplateApp.Application.Features.Users.Common;
+using TemplateApp.Application.Features.Users.Common.Models;
 using TemplateApp.Application.Features.Users.ListUsers;
 
 namespace TemplateApp.Api.Endpoints;

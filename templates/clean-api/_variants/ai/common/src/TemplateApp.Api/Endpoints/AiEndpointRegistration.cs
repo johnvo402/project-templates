@@ -1,6 +1,7 @@
 using Mediator;
 using TemplateApp.Api.Authentication;
 using TemplateApp.Api.Responses;
+using TemplateApp.Application.Features.AI.Common.Models;
 using TemplateApp.Application.Features.AI.GenerateText;
 
 namespace TemplateApp.Api.Endpoints;
