@@ -14,7 +14,7 @@ public sealed class OpenAiService(IOptions<OpenAiOptions> options) : IAiService
     {
         if (string.IsNullOrWhiteSpace(_options.ApiKey))
             throw new InvalidOperationException(
-                "OpenAI API key is not configured. Set OpenAI__ApiKey or OPENAI_API_KEY.");
+                "OpenAI API key is not configured. Set OpenAI__ApiKey in ASP.NET configuration.");
 
         var client = new ChatClient(model: _options.Model, apiKey: _options.ApiKey);
         ChatCompletion completion = await client.CompleteChatAsync(prompt)
