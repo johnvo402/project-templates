@@ -1,4 +1,5 @@
 import { FormEvent, useState } from 'react';
+import '../../shared/pagination.css';
 import { buildPaginationItems } from '../../shared/pagination';
 import { useCompleteTodo, useCreateTodo, useTodos } from './todo.queries';
 
