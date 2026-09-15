@@ -12,6 +12,23 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  env-conventions:
+    name: env conventions
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Reject ASP.NET section keys in env examples
+        shell: bash
+        run: |
+          matches="$(grep -RInE --include='.env*.example' '^[[:space:]]*#?[[:space:]]*[A-Za-z0-9_]+__[A-Za-z0-9_]+=' templates/clean-api || true)"
+          if [ -n "$matches" ]; then
+            echo "$matches"
+            echo "Use UPPER_SNAKE_CASE aliases in .env example files; map them to canonical ASP.NET keys in code/compose." >&2
+            exit 1
+          fi
+
   generated-projects:
     name: ${{ matrix.label }}
     runs-on: ubuntu-latest

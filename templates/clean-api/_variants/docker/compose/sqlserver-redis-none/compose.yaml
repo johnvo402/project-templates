@@ -5,9 +5,16 @@ services:
       dockerfile: src/TemplateApp.Api/Dockerfile
     environment:
       ASPNETCORE_ENVIRONMENT: Development
+      Database__AutoMigrate: "${AUTO_MIGRATE:-true}"
       ConnectionStrings__Default: "Server=db,1433;Database=TemplateApp;User Id=sa;Password=${DB_PASSWORD:-TemplateStrong!123};TrustServerCertificate=True"
+      Jwt__Issuer: "${JWT_ISSUER:-TemplateApp}"
+      Jwt__Audience: "${JWT_AUDIENCE:-TemplateApp.Client}"
       Jwt__Key: "${JWT_KEY:-TemplateApp-compose-development-key-change-me-123456789}"
+      Jwt__ExpirationMinutes: "${JWT_EXPIRATION_MINUTES:-15}"
+      Auth__RefreshTokenDays: "${REFRESH_TOKEN_DAYS:-14}"
+      Auth__RefreshCookieName: "${REFRESH_COOKIE_NAME:-refresh_token}"
       Redis__Configuration: redis:6379
+      Redis__InstanceName: "${REDIS_INSTANCE_NAME:-TemplateApp:}"
     ports:
       - "5000:8080"
     depends_on:

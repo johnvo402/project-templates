@@ -1,8 +1,5 @@
 services:
   api:
     environment:
-      # Both conventions are forwarded. AiRegistration accepts either one.
-      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
-      OPENAI_MODEL: ${OPENAI_MODEL:-}
-      OpenAI__ApiKey: ${OpenAI__ApiKey:-}
-      OpenAI__Model: ${OpenAI__Model:-}
+      OpenAI__ApiKey: "${OPENAI_API_KEY:-}"
+      OpenAI__Model: "${OPENAI_MODEL:-}"

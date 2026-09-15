@@ -8,9 +8,10 @@ public sealed class AppDbContextFactory : IDesignTimeDbContextFactory<AppDbConte
 {
     public AppDbContext CreateDbContext(string[] args)
     {
-        var connectionString =
-            Environment.GetEnvironmentVariable("ConnectionStrings__Default")
-            ?? "Server=localhost,1433;Database=TemplateApp;User Id=sa;Password=TemplateStrong!123;TrustServerCertificate=True";
+        var connectionString = FirstNotBlank(
+            Environment.GetEnvironmentVariable("ConnectionStrings__Default"),
+            Environment.GetEnvironmentVariable("DB_CONNECTION"),
+            "Server=localhost,1433;Database=TemplateApp;User Id=sa;Password=TemplateStrong!123;TrustServerCertificate=True");
 
         var optionsBuilder = new DbContextOptionsBuilder<AppDbContext>();
 
@@ -20,4 +21,7 @@ public sealed class AppDbContextFactory : IDesignTimeDbContextFactory<AppDbConte
 
         return new AppDbContext(optionsBuilder.Options);
     }
+
+    private static string FirstNotBlank(params string?[] values)
+        => values.First(value => !string.IsNullOrWhiteSpace(value))!;
 }
