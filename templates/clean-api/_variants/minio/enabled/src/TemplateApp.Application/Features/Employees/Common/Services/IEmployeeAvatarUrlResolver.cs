@@ -1,4 +1,4 @@
-namespace TemplateApp.Application.Abstractions.Storage;
+namespace TemplateApp.Application.Features.Employees.Common.Services;
 
 public interface IEmployeeAvatarUrlResolver
 {

@@ -62,6 +62,22 @@ jobs:
             filter: false
             docker: false
             verifyRename: false
+          - label: net9 filter only
+            project: SmokeFilterOnly
+            sdk: 9.0.x
+            arguments: --framework net9.0 --filter true --minio false --ai none
+            frontend: false
+            filter: true
+            docker: false
+            verifyRename: false
+          - label: net9 minio only
+            project: SmokeMinioOnly
+            sdk: 9.0.x
+            arguments: --framework net9.0 --filter false --minio true --ai none
+            frontend: false
+            filter: false
+            docker: false
+            verifyRename: false
           - label: net9 full stack
             project: SmokeFull
             sdk: 9.0.x
@@ -147,6 +163,25 @@ jobs:
             echo "$matches"
             echo "Orders, Dashboard and Reports must read operational data directly and must not depend on cache services." >&2
             exit 1
+          fi
+
+      - name: Check employee avatar boundary
+        shell: bash
+        run: |
+          stale="$(grep -RInE --include='*.cs' '(NullEmployeeAvatarUrlResolver|MinioEmployeeAvatarUrlResolver)' "$SMOKE_OUTPUT/src" || true)"
+          if [ -n "$stale" ]; then
+            echo "$stale"
+            echo "Employee avatar resolution must be employee-scoped and must not use legacy null/MinIO-specific resolver names." >&2
+            exit 1
+          fi
+
+          if [[ "${{ matrix.arguments }}" != *"--minio true"* ]]; then
+            leaked="$(grep -RInE --include='*.cs' '(IEmployeeAvatarUrlResolver|EmployeeAvatarUrlResolver|AvatarObjectName)' "$SMOKE_OUTPUT/src" || true)"
+            if [ -n "$leaked" ]; then
+              echo "$leaked"
+              echo "Employee avatar storage plumbing must not be generated when MinIO is disabled." >&2
+              exit 1
+            fi
           fi
 
       - name: Check generated env boundary

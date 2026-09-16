@@ -1,8 +1,9 @@
 using TemplateApp.Application.Abstractions.Storage;
+using TemplateApp.Application.Features.Employees.Common.Services;
 
-namespace TemplateApp.Infrastructure.Storage;
+namespace TemplateApp.Infrastructure.Employees;
 
-public sealed class MinioEmployeeAvatarUrlResolver(IObjectStorage storage) : IEmployeeAvatarUrlResolver
+public sealed class EmployeeAvatarUrlResolver(IObjectStorage storage) : IEmployeeAvatarUrlResolver
 {
     public async ValueTask<string?> ResolveAsync(string? objectName, CancellationToken cancellationToken = default)
     {
