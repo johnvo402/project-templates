@@ -56,6 +56,7 @@ app.MapProfileEndpoints();
 app.MapOptionalProfileAvatarEndpoints();
 app.MapDashboardEndpoints();
 app.MapProductEndpoints();
+app.MapOptionalProductImageEndpoints();
 app.MapOrderEndpoints();
 app.MapEmployeeEndpoints();
 app.MapReportEndpoints();
