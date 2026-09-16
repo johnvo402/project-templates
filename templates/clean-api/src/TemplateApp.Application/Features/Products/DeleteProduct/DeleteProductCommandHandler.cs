@@ -1,6 +1,7 @@
 using Mediator;
 using TemplateApp.Application.Abstractions.Persistence;
 using TemplateApp.Application.Common.Results;
+using TemplateApp.Application.Features.Products.Common;
 using TemplateApp.Domain.Products;
 using TemplateApp.Domain.Products.Specifications;
 
@@ -21,6 +22,9 @@ public sealed class DeleteProductCommandHandler(IUnitOfWork unitOfWork)
 
         repository.Remove(product);
         await unitOfWork.SaveAsync(cancellationToken);
+#if REDIS
+        await ProductCache.InvalidateAsync(unitOfWork, cancellationToken);
+#endif
         return Result.Success();
     }
 }
