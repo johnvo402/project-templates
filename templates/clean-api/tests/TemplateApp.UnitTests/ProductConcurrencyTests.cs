@@ -42,7 +42,8 @@ public sealed class ProductConcurrencyTests
         var exception = await Assert.ThrowsAsync<PersistenceConcurrencyException>(
             () => staleUnitOfWork.SaveChangesAsync());
 
-        Assert.Equal(PersistenceConcurrencyException.ErrorCode, exception.Code);
+        Assert.Equal("The resource was modified by another request. Reload and retry.", exception.Message);
+        Assert.NotNull(exception.InnerException);
 
         await using var verificationContext = new AppDbContext(options);
         var persisted = await verificationContext.Products.AsNoTracking().SingleAsync(x => x.Id == product.Id);
