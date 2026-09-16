@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { bootstrapAuth, logout, type AuthUser } from '../core/auth/auth-session';
 import { LoginPage } from '../features/auth/LoginPage';
-import { BusinessWorkspace } from '../features/business/BusinessWorkspace';
+import { StorageBusinessWorkspace } from '../features/storage/StorageBusinessWorkspace';
 import { AppShell } from '../shared/components/AppShell';
 
 export function App() {
@@ -10,7 +10,7 @@ export function App() {
   if (user === undefined) return <main className="shell"><p>Restoring session…</p></main>;
   if (user === null) return <LoginPage onAuthenticated={setUser} />;
   return <AppShell user={user} onLogout={() => void logout().finally(() => setUser(null))}>
-    <BusinessWorkspace
+    <StorageBusinessWorkspace
       user={user}
       onProfileUpdated={displayName => setUser(current => current ? { ...current, displayName } : current)}
     />
