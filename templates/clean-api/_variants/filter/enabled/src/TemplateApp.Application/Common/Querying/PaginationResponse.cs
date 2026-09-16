@@ -15,6 +15,9 @@ public sealed class PaginationResponse<T>
         Paging = paging;
     }
 
+    public PaginationResponse<TNext> WithData<TNext>(IReadOnlyList<TNext> data)
+        => new(data, Paging);
+
     public static PaginationResponse<T> ForPage(
         IReadOnlyList<T> data,
         int totalCount,
