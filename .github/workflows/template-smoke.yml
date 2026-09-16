@@ -46,6 +46,14 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - label: net10 default
+            project: SmokeNet10Default
+            sdk: 10.0.x
+            arguments: --framework net10.0
+            frontend: false
+            filter: false
+            docker: false
+            verifyRename: false
           - label: net9 default
             project: SmokeDefault
             sdk: 9.0.x
