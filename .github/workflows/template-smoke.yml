@@ -62,6 +62,14 @@ jobs:
             filter: true
             docker: true
             verifyRename: true
+          - label: net9 angular
+            project: SmokeAngular
+            sdk: 9.0.x
+            arguments: --framework net9.0 --frontend angular --database postgresql --minio true --ai none --filter true
+            frontend: true
+            filter: true
+            docker: false
+            verifyRename: true
           - label: net9 filter disabled
             project: SmokeNoFilter
             sdk: 9.0.x
@@ -110,6 +118,28 @@ jobs:
       - name: Check generated repository declarations
         shell: pwsh
         run: ./tests/Assert-GeneratedRepositories.ps1 -ProjectRoot $env:SMOKE_OUTPUT
+
+      - name: Reject legacy todo sample
+        shell: bash
+        run: |
+          targets=("$SMOKE_OUTPUT/src")
+          if [ -d "$SMOKE_OUTPUT/frontend" ]; then targets+=("$SMOKE_OUTPUT/frontend"); fi
+          matches="$(grep -RInE --exclude-dir=node_modules --exclude-dir=bin --exclude-dir=obj '(Features[/\\]Todos|/api/todos|todos\.(read|write)|users\.(read|manage))' "${targets[@]}" || true)"
+          if [ -n "$matches" ]; then
+            echo "$matches"
+            echo "Legacy Todo/Users starter artifacts must not appear in generated projects." >&2
+            exit 1
+          fi
+
+      - name: Reject feature caching for orders and reporting
+        shell: bash
+        run: |
+          matches="$(grep -RInE --include='*.cs' '(ICacheRepository|IDistributedCache|HybridCache)' "$SMOKE_OUTPUT/src" 2>/dev/null | grep -E '(Features/(Orders|Dashboard|Reports)/|Reporting/BusinessReportingService)' || true)"
+          if [ -n "$matches" ]; then
+            echo "$matches"
+            echo "Orders, Dashboard and Reports must read operational data directly and must not depend on cache services." >&2
+            exit 1
+          fi
 
       - name: Check generated env boundary
         shell: bash
