@@ -12,6 +12,7 @@ public static class StorageRegistration
     {
         services.Configure<MinioOptions>(configuration.GetSection(MinioOptions.SectionName));
         services.AddSingleton<IObjectStorage, MinioObjectStorage>();
+        services.AddSingleton<IEmployeeAvatarUrlResolver, MinioEmployeeAvatarUrlResolver>();
         return services;
     }
 }

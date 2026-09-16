@@ -30,6 +30,8 @@ public sealed class PaginationResponse<T>
                 currentPage < totalPage,
                 currentPage > 1));
     }
+
+    public PaginationResponse<T> WithData(IReadOnlyList<T> data) => new(data, Paging);
 }
 
 public sealed class Paging
