@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
+import { PaginationResponse } from '../../core/api/api.models';
 import { AuthSessionService } from '../../core/auth/auth-session.service';
 import { ProfilePage } from '../profile/profile.page';
 import {
@@ -17,13 +18,16 @@ import {
   StoreSettings,
   TopProduct,
 } from './business-api.service';
+import { BusinessPaginationComponent } from './business-pagination.component';
+import { FILTER_ENABLED, type BusinessListQuery, type ListFilter } from './business-query';
 
 type Section='dashboard'|'orders'|'products'|'employees'|'reports'|'settings'|'profile';
+type ListSection='products'|'orders'|'employees';
 
 @Component({
   selector:'app-business-workspace',
   standalone:true,
-  imports:[CommonModule,FormsModule,ProfilePage],
+  imports:[CommonModule,FormsModule,ProfilePage,BusinessPaginationComponent],
   styleUrl:'./business.css',
   template:`
   <div class="business-layout">
@@ -31,10 +35,7 @@ type Section='dashboard'|'orders'|'products'|'employees'|'reports'|'settings'|'p
       <div class="sidebar-heading"><span class="sidebar-kicker">Mini Store</span><strong>Operations</strong></div>
       <nav>
         @if(auth.can('dashboard.view')){<div class="nav-group"><span>Overview</span><button [class.active]="section==='dashboard'" (click)="open('dashboard')">Dashboard</button></div>}
-        <div class="nav-group"><span>Sales</span>
-          @if(auth.can('orders.view')){<button [class.active]="section==='orders'" (click)="open('orders')">Orders</button>}
-          @if(auth.can('products.view')){<button [class.active]="section==='products'" (click)="open('products')">Products</button>}
-        </div>
+        <div class="nav-group"><span>Sales</span>@if(auth.can('orders.view')){<button [class.active]="section==='orders'" (click)="open('orders')">Orders</button>}@if(auth.can('products.view')){<button [class.active]="section==='products'" (click)="open('products')">Products</button>}</div>
         @if(auth.can('employees.view')){<div class="nav-group"><span>Management</span><button [class.active]="section==='employees'" (click)="open('employees')">Employees</button></div>}
         @if(auth.can('reports.view')){<div class="nav-group"><span>Analytics</span><button [class.active]="section==='reports'" (click)="open('reports')">Reports</button></div>}
         @if(auth.can('settings.view')){<div class="nav-group"><span>System</span><button [class.active]="section==='settings'" (click)="open('settings')">Settings</button></div>}
@@ -51,96 +52,45 @@ type Section='dashboard'|'orders'|'products'|'employees'|'reports'|'settings'|'p
       @switch(section){
         @case('dashboard'){
           <header class="page-heading"><div><p class="eyebrow">Overview</p><h1>Dashboard</h1><p>Live operational snapshot. Data refreshes directly every 30 seconds.</p></div><div class="page-actions"><button class="ghost" (click)="refresh()">Refresh</button></div></header>
-          @if(dashboard){
-            <div class="metric-grid">
-              <article class="metric-card"><span>Revenue today</span><strong>{{money(dashboard.revenueToday)}}</strong></article>
-              <article class="metric-card"><span>Revenue this month</span><strong>{{money(dashboard.revenueThisMonth)}}</strong></article>
-              <article class="metric-card"><span>Orders</span><strong>{{dashboard.totalOrders}}</strong></article>
-              <article class="metric-card"><span>Pending orders</span><strong>{{dashboard.pendingOrders}}</strong></article>
-              <article class="metric-card"><span>Products</span><strong>{{dashboard.totalProducts}}</strong></article>
-              <article class="metric-card"><span>Low stock</span><strong>{{dashboard.lowStockProducts}}</strong></article>
-              <article class="metric-card"><span>Employees</span><strong>{{dashboard.totalEmployees}}</strong></article>
-            </div>
-            <div class="content-grid two-columns">
-              <article class="panel"><div class="panel-title"><h2>Top products</h2><span>By revenue</span></div><div class="stack-list">
-                @for(item of dashboard.topProducts.slice(0,6);track item.productName;let i=$index){<div class="rank-row"><b>{{i+1}}</b><div><strong>{{item.productName}}</strong><span>{{item.quantity}} sold</span></div><em>{{money(item.revenue)}}</em></div>}
-              </div></article>
-              <article class="panel"><div class="panel-title"><h2>Recent orders</h2><span>Latest activity</span></div><div class="stack-list">
-                @for(order of dashboard.recentOrders.slice(0,6);track order.id){<div class="order-row"><div><strong>{{order.orderNumber}}</strong><span>{{order.customerName}}</span></div><span [class]="statusClass(order.status)">{{order.status}}</span><em>{{money(order.totalAmount)}}</em></div>}
-              </div></article>
-            </div>
-          }
+          @if(dashboard){<div class="metric-grid"><article class="metric-card"><span>Revenue today</span><strong>{{money(dashboard.revenueToday)}}</strong></article><article class="metric-card"><span>Revenue this month</span><strong>{{money(dashboard.revenueThisMonth)}}</strong></article><article class="metric-card"><span>Orders</span><strong>{{dashboard.totalOrders}}</strong></article><article class="metric-card"><span>Pending orders</span><strong>{{dashboard.pendingOrders}}</strong></article><article class="metric-card"><span>Products</span><strong>{{dashboard.totalProducts}}</strong></article><article class="metric-card"><span>Low stock</span><strong>{{dashboard.lowStockProducts}}</strong></article><article class="metric-card"><span>Employees</span><strong>{{dashboard.totalEmployees}}</strong></article></div>
+            <div class="content-grid two-columns"><article class="panel"><div class="panel-title"><h2>Top products</h2><span>By revenue</span></div><div class="stack-list">@for(item of dashboard.topProducts.slice(0,6);track item.productName;let i=$index){<div class="rank-row"><b>{{i+1}}</b><div><strong>{{item.productName}}</strong><span>{{item.quantity}} sold</span></div><em>{{money(item.revenue)}}</em></div>}</div></article><article class="panel"><div class="panel-title"><h2>Recent orders</h2><span>Latest activity</span></div><div class="stack-list">@for(order of dashboard.recentOrders.slice(0,6);track order.id){<div class="order-row"><div><strong>{{order.orderNumber}}</strong><span>{{order.customerName}}</span></div><span [class]="statusClass(order.status)">{{order.status}}</span><em>{{money(order.totalAmount)}}</em></div>}</div></article></div>}
         }
         @case('products'){
           <header class="page-heading"><div><p class="eyebrow">Sales</p><h1>Products</h1><p>Catalog, pricing and stock at a glance.</p></div><div class="page-actions"><button class="ghost" (click)="refresh()">Refresh</button>@if(auth.can('products.create')){<button class="primary" (click)="openProductCreate()">Add product</button>}</div></header>
-          @if(showProductForm){<article class="panel editor-panel">
-            <div class="panel-title"><h2>{{editingProduct?'Edit product':'New product'}}</h2><button class="link-button" (click)="showProductForm=false">Close</button></div>
-            <div class="form-grid">
-              <label>Name<input [(ngModel)]="productDraft.name"/></label>
-              <label>SKU<input [(ngModel)]="productDraft.sku" (ngModelChange)="productDraft.sku=$event.toUpperCase()"/></label>
-              <label>Price<input type="number" min="0" step="0.01" [(ngModel)]="productDraft.price"/></label>
-              <label>Stock quantity<input type="number" min="0" [(ngModel)]="productDraft.stockQuantity"/></label>
-              <label class="check-field"><input type="checkbox" [(ngModel)]="productDraft.isActive"/> Active</label>
-            </div>
-            <div class="form-actions"><button class="primary" [disabled]="savingAction||!productDraft.name.trim()||!productDraft.sku.trim()" (click)="saveProduct()">{{savingAction?'Saving…':editingProduct?'Save changes':'Create product'}}</button></div>
-          </article>}
-          @if(products){<div class="panel table-panel"><div class="table-wrap"><table><thead><tr><th>Product</th><th>SKU</th><th>Price</th><th>Stock</th><th>Status</th><th>Updated</th><th>Actions</th></tr></thead><tbody>
-            @for(product of products;track product.id){<tr><td>{{product.name}}</td><td>{{product.sku}}</td><td>{{money(product.price)}}</td><td>{{product.stockQuantity}}</td><td><span [class]="product.isActive?'status status-active':'status status-inactive'">{{product.isActive?'Active':'Inactive'}}</span></td><td>{{date(product.updatedAt)}}</td><td><div class="row-actions">@if(auth.can('products.update')){<button (click)="openProductEdit(product)">Edit</button>}@if(auth.can('products.delete')){<button class="danger-link" (click)="deleteProduct(product)">Delete</button>}</div></td></tr>}@empty{<tr><td colspan="7" class="empty-cell">No products yet.</td></tr>}
-          </tbody></table></div></div>}
+          @if(filterEnabled){<section class="panel query-panel"><div class="query-grid"><label class="query-search">Search<input [(ngModel)]="productKeyword" placeholder="Name or SKU" (keyup.enter)="applyProductFilters()"/></label><label>Sort<select [(ngModel)]="productSort"><option value="">Default</option><option value="UpdatedAt:desc">Recently updated</option><option value="Name:asc">Name A–Z</option><option value="Price:asc">Price low to high</option><option value="Price:desc">Price high to low</option><option value="StockQuantity:asc">Lowest stock</option></select></label><label>Status<select [(ngModel)]="productActive"><option value="">All</option><option value="true">Active</option><option value="false">Inactive</option></select></label><label>Stock ≤<input type="number" min="0" [(ngModel)]="productLowStock" placeholder="Any"/></label></div><div class="query-actions"><button class="primary" (click)="applyProductFilters()">Apply</button><button class="ghost" (click)="resetProductFilters()">Clear</button><span>LHS filters are applied before pagination.</span></div></section>}
+          @if(showProductForm){<article class="panel editor-panel"><div class="panel-title"><h2>{{editingProduct?'Edit product':'New product'}}</h2><button class="link-button" (click)="showProductForm=false">Close</button></div><div class="form-grid"><label>Name<input [(ngModel)]="productDraft.name"/></label><label>SKU<input [(ngModel)]="productDraft.sku" (ngModelChange)="productDraft.sku=$event.toUpperCase()"/></label><label>Price<input type="number" min="0" step="0.01" [(ngModel)]="productDraft.price"/></label><label>Stock quantity<input type="number" min="0" [(ngModel)]="productDraft.stockQuantity"/></label><label class="check-field"><input type="checkbox" [(ngModel)]="productDraft.isActive"/> Active</label></div><div class="form-actions"><button class="primary" [disabled]="savingAction||!productDraft.name.trim()||!productDraft.sku.trim()" (click)="saveProduct()">{{savingAction?'Saving…':editingProduct?'Save changes':'Create product'}}</button></div></article>}
+          @if(productPage){<div class="panel table-panel"><div class="table-wrap"><table><thead><tr><th>Product</th><th>SKU</th><th>Price</th><th>Stock</th><th>Status</th><th>Updated</th><th>Actions</th></tr></thead><tbody>@for(product of productPage.data;track product.id){<tr><td>{{product.name}}</td><td>{{product.sku}}</td><td>{{money(product.price)}}</td><td>{{product.stockQuantity}}</td><td><span [class]="product.isActive?'status status-active':'status status-inactive'">{{product.isActive?'Active':'Inactive'}}</span></td><td>{{date(product.updatedAt)}}</td><td><div class="row-actions">@if(auth.can('products.update')){<button (click)="openProductEdit(product)">Edit</button>}@if(auth.can('products.delete')){<button class="danger-link" (click)="deleteProduct(product)">Delete</button>}</div></td></tr>}@empty{<tr><td colspan="7" class="empty-cell">No products yet.</td></tr>}</tbody></table></div></div>@if(productPage.paging){<app-business-pagination [paging]="productPage.paging" [pageSize]="productQuery.pageSize" (pageChange)="changePage('products',$event)" (pageSizeChange)="changePageSize('products',$event)"/>}}
         }
         @case('orders'){
           <header class="page-heading"><div><p class="eyebrow">Sales</p><h1>Orders</h1><p>Create orders and move them through fulfillment.</p></div><div class="page-actions"><button class="ghost" (click)="refresh()">Refresh</button>@if(auth.can('orders.create')){<button class="primary" (click)="openOrderCreate()">New order</button>}</div></header>
-          @if(showOrderForm){<article class="panel editor-panel">
-            <div class="panel-title"><h2>New order</h2><button class="link-button" (click)="showOrderForm=false">Close</button></div>
-            <div class="form-grid"><label>Customer name<input [(ngModel)]="orderCustomerName"/></label><label>Phone<input [(ngModel)]="orderCustomerPhone"/></label></div>
-            <div class="order-items"><div class="subheading"><strong>Items</strong><button class="ghost small" (click)="addOrderItem()">Add item</button></div>
-              @for(item of orderItems;track $index;let i=$index){<div class="item-row"><select [(ngModel)]="item.productId"><option value="">Select product</option>@for(product of availableProducts;track product.id){<option [value]="product.id">{{product.name}} · {{money(product.price)}} · {{product.stockQuantity}} in stock</option>}</select><input type="number" min="1" [(ngModel)]="item.quantity"/><button class="link-button danger-link" (click)="removeOrderItem(i)">Remove</button></div>}
-            </div><div class="form-actions"><button class="primary" [disabled]="savingAction||!orderCustomerName.trim()||!hasOrderItem()" (click)="createOrder()">{{savingAction?'Creating…':'Create order'}}</button></div>
-          </article>}
-          @if(orders){<div class="panel table-panel"><div class="table-wrap"><table><thead><tr><th>Order</th><th>Customer</th><th>Status</th><th>Items</th><th>Total</th><th>Created</th><th>Actions</th></tr></thead><tbody>
-            @for(order of orders;track order.id){<tr><td>{{order.orderNumber}}</td><td>{{order.customerName}}</td><td><span [class]="statusClass(order.status)">{{order.status}}</span></td><td>{{order.itemCount}}</td><td>{{money(order.totalAmount)}}</td><td>{{date(order.createdAt)}}</td><td><div class="row-actions">@if(auth.can('orders.update-status')&&order.status==='Pending'){<button (click)="updateOrderStatus(order,'Processing')">Process</button>}@if(auth.can('orders.update-status')&&(order.status==='Pending'||order.status==='Processing')){<button (click)="updateOrderStatus(order,'Completed')">Complete</button>}@if(auth.can('orders.cancel')&&order.status!=='Completed'&&order.status!=='Cancelled'){<button class="danger-link" (click)="cancelOrder(order)">Cancel</button>}</div></td></tr>}@empty{<tr><td colspan="7" class="empty-cell">No orders yet.</td></tr>}
-          </tbody></table></div></div>}
+          @if(filterEnabled){<section class="panel query-panel"><div class="query-grid"><label class="query-search">Search<input [(ngModel)]="orderKeyword" placeholder="Order, customer or phone" (keyup.enter)="applyOrderFilters()"/></label><label>Sort<select [(ngModel)]="orderSort"><option value="">Default</option><option value="CreatedAt:desc">Newest first</option><option value="CreatedAt:asc">Oldest first</option><option value="TotalAmount:desc">Highest total</option><option value="TotalAmount:asc">Lowest total</option><option value="OrderNumber:asc">Order number</option></select></label><label>Status<select [(ngModel)]="orderStatusFilter"><option value="">All</option><option>Pending</option><option>Processing</option><option>Completed</option><option>Cancelled</option></select></label><label>Total ≥<input type="number" min="0" step="0.01" [(ngModel)]="orderMinTotal" placeholder="Any"/></label></div><div class="query-actions"><button class="primary" (click)="applyOrderFilters()">Apply</button><button class="ghost" (click)="resetOrderFilters()">Clear</button><span>LHS filters are applied before pagination.</span></div></section>}
+          @if(showOrderForm){<article class="panel editor-panel"><div class="panel-title"><h2>New order</h2><button class="link-button" (click)="showOrderForm=false">Close</button></div><div class="form-grid"><label>Customer name<input [(ngModel)]="orderCustomerName"/></label><label>Phone<input [(ngModel)]="orderCustomerPhone"/></label></div><div class="order-items"><div class="subheading"><strong>Items</strong><button class="ghost small" (click)="addOrderItem()">Add item</button></div>@for(item of orderItems;track $index;let i=$index){<div class="item-row"><select [(ngModel)]="item.productId"><option value="">Select product</option>@for(product of availableProducts;track product.id){<option [value]="product.id">{{product.name}} · {{money(product.price)}} · {{product.stockQuantity}} in stock</option>}</select><input type="number" min="1" [(ngModel)]="item.quantity"/><button class="link-button danger-link" (click)="removeOrderItem(i)">Remove</button></div>}</div><div class="form-actions"><button class="primary" [disabled]="savingAction||!orderCustomerName.trim()||!hasOrderItem()" (click)="createOrder()">{{savingAction?'Creating…':'Create order'}}</button></div></article>}
+          @if(orderPage){<div class="panel table-panel"><div class="table-wrap"><table><thead><tr><th>Order</th><th>Customer</th><th>Status</th><th>Items</th><th>Total</th><th>Created</th><th>Actions</th></tr></thead><tbody>@for(order of orderPage.data;track order.id){<tr><td>{{order.orderNumber}}</td><td>{{order.customerName}}</td><td><span [class]="statusClass(order.status)">{{order.status}}</span></td><td>{{order.items.length}}</td><td>{{money(order.totalAmount)}}</td><td>{{date(order.createdAt)}}</td><td><div class="row-actions">@if(auth.can('orders.update-status')&&order.status==='Pending'){<button (click)="updateOrderStatus(order,'Processing')">Process</button>}@if(auth.can('orders.update-status')&&(order.status==='Pending'||order.status==='Processing')){<button (click)="updateOrderStatus(order,'Completed')">Complete</button>}@if(auth.can('orders.cancel')&&order.status!=='Completed'&&order.status!=='Cancelled'){<button class="danger-link" (click)="cancelOrder(order)">Cancel</button>}</div></td></tr>}@empty{<tr><td colspan="7" class="empty-cell">No orders yet.</td></tr>}</tbody></table></div></div>@if(orderPage.paging){<app-business-pagination [paging]="orderPage.paging" [pageSize]="orderQuery.pageSize" (pageChange)="changePage('orders',$event)" (pageSizeChange)="changePageSize('orders',$event)"/>}}
         }
         @case('employees'){
           <header class="page-heading"><div><p class="eyebrow">Management</p><h1>Employees</h1><p>Team access, roles and account status.</p></div><div class="page-actions"><button class="ghost" (click)="refresh()">Refresh</button>@if(auth.can('employees.create')){<button class="primary" (click)="openEmployeeCreate()">Add employee</button>}</div></header>
-          @if(showEmployeeForm){<article class="panel editor-panel"><div class="panel-title"><h2>New employee</h2><button class="link-button" (click)="showEmployeeForm=false">Close</button></div><div class="form-grid">
-            <label>Display name<input [(ngModel)]="employeeDraft.displayName"/></label><label>Email<input type="email" [(ngModel)]="employeeDraft.email"/></label><label>Temporary password<input type="password" [(ngModel)]="employeeDraft.password"/></label><label>Role<select [(ngModel)]="employeeDraft.role">@for(role of roles;track role){<option [value]="role">{{role}}</option>}</select></label>
-          </div><div class="form-actions"><button class="primary" [disabled]="savingAction||!employeeDraft.displayName.trim()||!employeeDraft.email.trim()||!employeeDraft.password" (click)="createEmployee()">{{savingAction?'Creating…':'Create employee'}}</button></div></article>}
-          @if(employees){<div class="panel table-panel"><div class="table-wrap"><table><thead><tr><th>Employee</th><th>Email</th><th>Role</th><th>Status</th><th>Joined</th><th>Actions</th></tr></thead><tbody>
-            @for(employee of employees;track employee.id){<tr><td><span class="person-cell">@if(employee.avatarUrl){<img [src]="employee.avatarUrl" alt=""/>}@else{<i>{{employee.displayName.slice(0,1).toUpperCase()}}</i>}<strong>{{employee.displayName}}</strong></span></td><td>{{employee.email}}</td><td>@if(auth.can('employees.change-role')){<select class="table-select" [ngModel]="employee.role" (ngModelChange)="changeEmployeeRole(employee,$event)">@for(role of roles;track role){<option [value]="role">{{role}}</option>}</select>}@else{{{employee.role}}}</td><td><span [class]="employee.isActive?'status status-active':'status status-inactive'">{{employee.isActive?'Active':'Disabled'}}</span></td><td>{{date(employee.createdAt)}}</td><td><div class="row-actions">@if(auth.can('employees.update')){<button [class.danger-link]="employee.isActive" (click)="toggleEmployeeStatus(employee)">{{employee.isActive?'Disable':'Enable'}}</button>}</div></td></tr>}@empty{<tr><td colspan="6" class="empty-cell">No employees yet.</td></tr>}
-          </tbody></table></div></div>}
+          @if(filterEnabled){<section class="panel query-panel"><div class="query-grid"><label class="query-search">Search<input [(ngModel)]="employeeKeyword" placeholder="Name, email or role" (keyup.enter)="applyEmployeeFilters()"/></label><label>Sort<select [(ngModel)]="employeeSort"><option value="">Default</option><option value="CreatedAt:desc">Newest first</option><option value="DisplayName:asc">Name A–Z</option><option value="Email:asc">Email A–Z</option><option value="Role:asc">Role</option></select></label><label>Role<select [(ngModel)]="employeeRoleFilter"><option value="">All</option>@for(role of roles;track role){<option [value]="role">{{role}}</option>}</select></label><label>Status<select [(ngModel)]="employeeStatusFilter"><option value="">All</option><option value="true">Active</option><option value="false">Disabled</option></select></label></div><div class="query-actions"><button class="primary" (click)="applyEmployeeFilters()">Apply</button><button class="ghost" (click)="resetEmployeeFilters()">Clear</button><span>LHS filters are applied before pagination.</span></div></section>}
+          @if(showEmployeeForm){<article class="panel editor-panel"><div class="panel-title"><h2>New employee</h2><button class="link-button" (click)="showEmployeeForm=false">Close</button></div><div class="form-grid"><label>Display name<input [(ngModel)]="employeeDraft.displayName"/></label><label>Email<input type="email" [(ngModel)]="employeeDraft.email"/></label><label>Temporary password<input type="password" [(ngModel)]="employeeDraft.password"/></label><label>Role<select [(ngModel)]="employeeDraft.role">@for(role of roles;track role){<option [value]="role">{{role}}</option>}</select></label></div><div class="form-actions"><button class="primary" [disabled]="savingAction||!employeeDraft.displayName.trim()||!employeeDraft.email.trim()||!employeeDraft.password" (click)="createEmployee()">{{savingAction?'Creating…':'Create employee'}}</button></div></article>}
+          @if(employeePage){<div class="panel table-panel"><div class="table-wrap"><table><thead><tr><th>Employee</th><th>Email</th><th>Role</th><th>Status</th><th>Joined</th><th>Actions</th></tr></thead><tbody>@for(employee of employeePage.data;track employee.id){<tr><td><span class="person-cell">@if(employee.avatarUrl){<img [src]="employee.avatarUrl" alt=""/>}@else{<i>{{employee.displayName.slice(0,1).toUpperCase()}}</i>}<strong>{{employee.displayName}}</strong></span></td><td>{{employee.email}}</td><td>@if(auth.can('employees.change-role')){<select class="table-select" [ngModel]="employee.role" (ngModelChange)="changeEmployeeRole(employee,$event)">@for(role of roles;track role){<option [value]="role">{{role}}</option>}</select>}@else{<span>{{employee.role}}</span>}</td><td><span [class]="employee.isActive?'status status-active':'status status-inactive'">{{employee.isActive?'Active':'Disabled'}}</span></td><td>{{date(employee.createdAt)}}</td><td><div class="row-actions">@if(auth.can('employees.update')){<button [class.danger-link]="employee.isActive" (click)="toggleEmployeeStatus(employee)">{{employee.isActive?'Disable':'Enable'}}</button>}</div></td></tr>}@empty{<tr><td colspan="6" class="empty-cell">No employees yet.</td></tr>}</tbody></table></div></div>@if(employeePage.paging){<app-business-pagination [paging]="employeePage.paging" [pageSize]="employeeQuery.pageSize" (pageChange)="changePage('employees',$event)" (pageSizeChange)="changePageSize('employees',$event)"/>}}
         }
         @case('reports'){
-          <header class="page-heading"><div><p class="eyebrow">Analytics</p><h1>Reports</h1><p>Fresh calculations read directly from operational data.</p></div><div class="page-actions"><button class="ghost" (click)="refresh()">Refresh</button></div></header>
-          <div class="content-grid two-columns">
-            <article class="panel"><div class="panel-title"><h2>Top products</h2></div>@for(item of topProducts;track item.productName){<div class="report-line"><span>{{item.productName}}</span><strong>{{item.quantity}}</strong><em>{{money(item.revenue)}}</em></div>}</article>
-            <article class="panel"><div class="panel-title"><h2>Orders by status</h2></div>@for(item of orderStatuses;track item.status){<div class="report-line"><span>{{item.status}}</span><strong>{{item.count}}</strong></div>}</article>
-          </div>
+          <header class="page-heading"><div><p class="eyebrow">Analytics</p><h1>Reports</h1><p>Fresh calculations read directly from operational data.</p></div><div class="page-actions"><button class="ghost" (click)="refresh()">Refresh</button></div></header><div class="content-grid two-columns"><article class="panel"><div class="panel-title"><h2>Top products</h2></div>@for(item of topProducts;track item.productName){<div class="report-line"><span>{{item.productName}}</span><strong>{{item.quantity}}</strong><em>{{money(item.revenue)}}</em></div>}</article><article class="panel"><div class="panel-title"><h2>Orders by status</h2></div>@for(item of orderStatuses;track item.status){<div class="report-line"><span>{{item.status}}</span><strong>{{item.count}}</strong></div>}</article></div>
         }
         @case('settings'){
-          <header class="page-heading"><div><p class="eyebrow">System</p><h1>Settings</h1><p>Store identity and operational defaults.</p></div></header>
-          @if(settings){<article class="panel settings-form"><div class="form-grid">
-            <label>Store name<input [(ngModel)]="settings.storeName" [disabled]="!auth.can('settings.update')"/></label>
-            <label>Email<input [(ngModel)]="settings.storeEmail" [disabled]="!auth.can('settings.update')"/></label>
-            <label>Phone<input [(ngModel)]="settings.storePhone" [disabled]="!auth.can('settings.update')"/></label>
-            <label>Currency<input [(ngModel)]="settings.currency" [disabled]="!auth.can('settings.update')"/></label>
-            <label>Timezone<input [(ngModel)]="settings.timezone" [disabled]="!auth.can('settings.update')"/></label>
-            <label>Low-stock threshold<input type="number" min="0" [(ngModel)]="settings.lowStockThreshold" [disabled]="!auth.can('settings.update')"/></label>
-          </div>@if(auth.can('settings.update')){<div class="form-actions"><button class="primary" (click)="saveSettings()" [disabled]="savingAction">{{savingAction?'Saving…':'Save settings'}}</button></div>}</article>}
+          <header class="page-heading"><div><p class="eyebrow">System</p><h1>Settings</h1><p>Store identity and operational defaults.</p></div></header>@if(settings){<article class="panel settings-form"><div class="form-grid"><label>Store name<input [(ngModel)]="settings.storeName" [disabled]="!auth.can('settings.update')"/></label><label>Email<input [(ngModel)]="settings.storeEmail" [disabled]="!auth.can('settings.update')"/></label><label>Phone<input [(ngModel)]="settings.storePhone" [disabled]="!auth.can('settings.update')"/></label><label>Currency<input [(ngModel)]="settings.currency" [disabled]="!auth.can('settings.update')"/></label><label>Timezone<input [(ngModel)]="settings.timezone" [disabled]="!auth.can('settings.update')"/></label><label>Low-stock threshold<input type="number" min="0" [(ngModel)]="settings.lowStockThreshold" [disabled]="!auth.can('settings.update')"/></label></div>@if(auth.can('settings.update')){<div class="form-actions"><button class="primary" (click)="saveSettings()" [disabled]="savingAction">{{savingAction?'Saving…':'Save settings'}}</button></div>}</article>}
         }
-        @case('profile'){
-          <header class="page-heading"><div><p class="eyebrow">Account</p><h1>Profile</h1><p>Manage your personal account information.</p></div></header>
-          <app-profile-page/>
-        }
+        @case('profile'){<header class="page-heading"><div><p class="eyebrow">Account</p><h1>Profile</h1><p>Manage your personal account information.</p></div></header><app-profile-page/>}
       }
     </section>
   </div>`
 })
 export class BusinessWorkspaceComponent implements OnInit,OnDestroy {
   readonly auth=inject(AuthSessionService); private readonly api=inject(BusinessApiService); private timer?:ReturnType<typeof setInterval>;
-  readonly roles=['Admin','Manager','Staff'];
+  readonly roles=['Admin','Manager','Staff']; readonly filterEnabled=FILTER_ENABLED;
   section:Section='dashboard'; loading=false; error=''; savingAction=false; notice=''; actionError='';
-  dashboard?:Dashboard; products?:Product[]; orders?:Order[]; employees?:Employee[]; topProducts:TopProduct[]=[]; orderStatuses:OrderStatusReport[]=[]; settings?:StoreSettings;
+  dashboard?:Dashboard; productPage?:PaginationResponse<Product>; orderPage?:PaginationResponse<Order>; employeePage?:PaginationResponse<Employee>; topProducts:TopProduct[]=[]; orderStatuses:OrderStatusReport[]=[]; settings?:StoreSettings;
+  productQuery:BusinessListQuery=this.emptyQuery(); orderQuery:BusinessListQuery=this.emptyQuery(); employeeQuery:BusinessListQuery=this.emptyQuery();
+  productKeyword='';productSort='';productActive='';productLowStock=''; orderKeyword='';orderSort='';orderStatusFilter='';orderMinTotal=''; employeeKeyword='';employeeSort='';employeeRoleFilter='';employeeStatusFilter='';
   showProductForm=false; editingProduct?:Product; productDraft:ProductModel=this.emptyProduct();
   showOrderForm=false; orderCustomerName=''; orderCustomerPhone=''; orderItems:OrderItemModel[]=[{productId:'',quantity:1}]; availableProducts:Product[]=[];
   showEmployeeForm=false; employeeDraft:CreateEmployeeModel=this.emptyEmployee();
@@ -149,21 +99,23 @@ export class BusinessWorkspaceComponent implements OnInit,OnDestroy {
   ngOnDestroy(){if(this.timer)clearInterval(this.timer);}
   open(section:Section){this.section=section;this.clearActionState();void this.load(section);}
   refresh(){void this.load(this.section);}
-  async load(section:Section,silent=false){if(section==='profile')return;if(!silent)this.loading=true;this.error='';try{switch(section){
-    case'dashboard':this.dashboard=await firstValueFrom(this.api.getDashboard());break;
-    case'products':this.products=(await firstValueFrom(this.api.getProducts())).data;break;
-    case'orders':this.orders=(await firstValueFrom(this.api.getOrders())).data;break;
-    case'employees':this.employees=(await firstValueFrom(this.api.getEmployees())).data;break;
-    case'reports':[this.topProducts,this.orderStatuses]=await Promise.all([firstValueFrom(this.api.getTopProducts()),firstValueFrom(this.api.getOrderStatuses())]);break;
-    case'settings':this.settings={...await firstValueFrom(this.api.getSettings())};break;
-  }}catch(error){this.error=this.message(error);}finally{if(!silent)this.loading=false;}}
+  async load(section:Section,silent=false){if(section==='profile')return;if(!silent)this.loading=true;this.error='';try{switch(section){case'dashboard':this.dashboard=await firstValueFrom(this.api.getDashboard());break;case'products':this.productPage=await firstValueFrom(this.api.getProducts(this.productQuery));break;case'orders':this.orderPage=await firstValueFrom(this.api.getOrders(this.orderQuery));break;case'employees':this.employeePage=await firstValueFrom(this.api.getEmployees(this.employeeQuery));break;case'reports':[this.topProducts,this.orderStatuses]=await Promise.all([firstValueFrom(this.api.getTopProducts()),firstValueFrom(this.api.getOrderStatuses())]);break;case'settings':this.settings={...await firstValueFrom(this.api.getSettings())};break;}}catch(error){this.error=this.message(error);}finally{if(!silent)this.loading=false;}}
+
+  applyProductFilters(){const filters:ListFilter[]=[];if(this.productActive)filters.push({field:'IsActive',operator:'$eq',value:this.productActive==='true'});if(String(this.productLowStock).trim())filters.push({field:'StockQuantity',operator:'$lte',value:Math.max(0,Number(this.productLowStock))});this.productQuery={...this.productQuery,page:1,keyword:this.clean(this.productKeyword),targets:['Name','Sku'],sort:this.productSort||undefined,filters};void this.load('products');}
+  resetProductFilters(){this.productKeyword='';this.productSort='';this.productActive='';this.productLowStock='';this.productQuery={page:1,pageSize:this.productQuery.pageSize};void this.load('products');}
+  applyOrderFilters(){const filters:ListFilter[]=[];if(this.orderStatusFilter)filters.push({field:'Status',operator:'$eqi',value:this.orderStatusFilter});if(String(this.orderMinTotal).trim())filters.push({field:'TotalAmount',operator:'$gte',value:Math.max(0,Number(this.orderMinTotal))});this.orderQuery={...this.orderQuery,page:1,keyword:this.clean(this.orderKeyword),targets:['OrderNumber','CustomerName','CustomerPhone'],sort:this.orderSort||undefined,filters};void this.load('orders');}
+  resetOrderFilters(){this.orderKeyword='';this.orderSort='';this.orderStatusFilter='';this.orderMinTotal='';this.orderQuery={page:1,pageSize:this.orderQuery.pageSize};void this.load('orders');}
+  applyEmployeeFilters(){const filters:ListFilter[]=[];if(this.employeeRoleFilter)filters.push({field:'Role',operator:'$eqi',value:this.employeeRoleFilter});if(this.employeeStatusFilter)filters.push({field:'IsActive',operator:'$eq',value:this.employeeStatusFilter==='true'});this.employeeQuery={...this.employeeQuery,page:1,keyword:this.clean(this.employeeKeyword),targets:['DisplayName','Email','Role'],sort:this.employeeSort||undefined,filters};void this.load('employees');}
+  resetEmployeeFilters(){this.employeeKeyword='';this.employeeSort='';this.employeeRoleFilter='';this.employeeStatusFilter='';this.employeeQuery={page:1,pageSize:this.employeeQuery.pageSize};void this.load('employees');}
+  changePage(section:ListSection,page:number){const query=this.queryFor(section);this.setQuery(section,{...query,page});void this.load(section,true);}
+  changePageSize(section:ListSection,pageSize:number){const query=this.queryFor(section);this.setQuery(section,{...query,page:1,pageSize});void this.load(section,true);}
 
   openProductCreate(){this.editingProduct=undefined;this.productDraft=this.emptyProduct();this.showProductForm=true;this.clearActionState();}
   openProductEdit(product:Product){this.editingProduct=product;this.productDraft={name:product.name,sku:product.sku,price:product.price,stockQuantity:product.stockQuantity,isActive:product.isActive};this.showProductForm=true;this.clearActionState();}
   async saveProduct(){if(!this.productDraft.name.trim()||!this.productDraft.sku.trim())return;await this.action(async()=>{if(this.editingProduct)await firstValueFrom(this.api.updateProduct(this.editingProduct.id,this.productDraft));else await firstValueFrom(this.api.createProduct(this.productDraft));this.notice=this.editingProduct?'Product updated.':'Product created.';this.showProductForm=false;this.editingProduct=undefined;this.productDraft=this.emptyProduct();await this.load('products',true);});}
   async deleteProduct(product:Product){if(!confirm(`Delete ${product.name}?`))return;await this.action(async()=>{await firstValueFrom(this.api.deleteProduct(product.id));this.notice='Product deleted.';await this.load('products',true);});}
 
-  async openOrderCreate(){this.showOrderForm=true;this.orderCustomerName='';this.orderCustomerPhone='';this.orderItems=[{productId:'',quantity:1}];this.clearActionState();try{this.availableProducts=(await firstValueFrom(this.api.getProducts(true))).data;}catch(error){this.actionError=this.message(error);}}
+  async openOrderCreate(){this.showOrderForm=true;this.orderCustomerName='';this.orderCustomerPhone='';this.orderItems=[{productId:'',quantity:1}];this.clearActionState();try{this.availableProducts=(await firstValueFrom(this.api.getActiveProducts())).data;}catch(error){this.actionError=this.message(error);}}
   addOrderItem(){this.orderItems=[...this.orderItems,{productId:'',quantity:1}];}
   removeOrderItem(index:number){if(this.orderItems.length>1)this.orderItems=this.orderItems.filter((_,i)=>i!==index);}
   hasOrderItem(){return this.orderItems.some(item=>!!item.productId&&item.quantity>0);}
@@ -180,6 +132,10 @@ export class BusinessWorkspaceComponent implements OnInit,OnDestroy {
   money(value:number){const currency=this.settings?.currency||'USD';try{return new Intl.NumberFormat(undefined,{style:'currency',currency}).format(value??0);}catch{return `${value??0} ${currency}`;}}
   date(value:string){return new Intl.DateTimeFormat(undefined,{dateStyle:'medium'}).format(new Date(value));}
   statusClass(status:string){return `status status-${status.toLowerCase()}`;}
+  private emptyQuery():BusinessListQuery{return{page:1,pageSize:20};}
+  private queryFor(section:ListSection){return section==='products'?this.productQuery:section==='orders'?this.orderQuery:this.employeeQuery;}
+  private setQuery(section:ListSection,query:BusinessListQuery){if(section==='products')this.productQuery=query;else if(section==='orders')this.orderQuery=query;else this.employeeQuery=query;}
+  private clean(value:string){return value.trim()||undefined;}
   private emptyProduct():ProductModel{return{name:'',sku:'',price:0,stockQuantity:0,isActive:true};}
   private emptyEmployee():CreateEmployeeModel{return{email:'',password:'',displayName:'',role:'Staff'};}
   private clearActionState(){this.notice='';this.actionError='';}
