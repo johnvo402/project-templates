@@ -6,7 +6,7 @@ Generated with `jv-api`, JohnVo's .NET 8+ DDD + Clean Architecture + Vertical Sl
 
 - DDD primitives, aggregates and concrete domain events
 - Specification + Repository/ReadOnlyRepository + UnitOfWork
-- Query `Projection` + Command `Model` conventions with SQL mapping expressions
+- Query `Projection` + Command `Model` conventions with EF-translatable mapping expressions
 - Mediator `ICommand` / `IQuery`
 - FluentValidation through a Mediator pipeline behavior
 - Minimal APIs
@@ -14,7 +14,7 @@ Generated with `jv-api`, JohnVo's .NET 8+ DDD + Clean Architecture + Vertical Sl
 - permission-based authorization
 - Result/API envelope + Problem Details
 - profile update
-- paginated Todo feature
+- Mini Store modules: Dashboard, Products, Orders, Employees, Reports and Settings
 - automatic startup migrations (`Database__AutoMigrate=true`)
 - `justfile`, CI and automatic `git init -b main`
 
@@ -34,21 +34,10 @@ Generated with `jv-api`, JohnVo's .NET 8+ DDD + Clean Architecture + Vertical Sl
 ```bash
 just build
 just test
-```
-
-Create the first migration if the project does not have one yet:
-
-```bash
-just migrate InitialCreate
-```
-
-Run the API directly:
-
-```bash
 just run
 ```
 
-The .NET backend uses the standard ASP.NET Core configuration providers. It does not parse a project `.env` file.
+The .NET backend uses standard ASP.NET Core configuration providers. It does not parse a project `.env` file.
 
 For local backend development without Docker, use `appsettings.Development.json`, `dotnet user-secrets`, or canonical ASP.NET environment variables such as:
 
@@ -64,13 +53,13 @@ Minio__Endpoint
 
 ## Docker `.env` and AI configuration
 
-When the project is generated with `--docker true`, `.env.example` is generated for Docker Compose interpolation:
+When generated with `--docker true`, `.env.example` is generated only for Docker Compose interpolation:
 
 ```bash
 cp .env.example .env
 ```
 
-The `.env` file uses user-facing `UPPER_SNAKE_CASE` aliases. Docker Compose maps them to the canonical environment keys consumed by ASP.NET Core. For example:
+The `.env` file uses user-facing `UPPER_SNAKE_CASE` aliases. Docker Compose maps them to canonical ASP.NET keys consumed by the API.
 
 ```env
 JWT_ISSUER=TemplateApp
@@ -88,46 +77,84 @@ Gemini__ApiKey
 Gemini__Model
 ```
 
-OpenAI follows the same boundary: `OPENAI_API_KEY` and `OPENAI_MODEL` are Docker Compose inputs and are mapped to `OpenAI__ApiKey` and `OpenAI__Model` inside the API container.
+OpenAI follows the same boundary: `OPENAI_API_KEY` and `OPENAI_MODEL` are Docker inputs and are mapped to `OpenAI__ApiKey` and `OpenAI__Model` inside the API container.
+
+## Mini Store sample
+
+The starter uses a practical Mini Store domain rather than a Todo example.
+
+### Dashboard
+
+`GET /api/dashboard` returns an operational snapshot including revenue, order counts, products, employees, low-stock count, top products and recent orders.
+
+Dashboard reads operational data directly. It is intentionally not backed by Redis cache.
+
+### Products
+
+Products contain name, unique SKU, price, stock, active state and timestamps. Query results use `ProductProjection`; create/update commands use `ProductModel`.
+
+Without LHS filtering:
+
+```text
+GET /api/products?page=1&pageSize=20
+```
+
+With `--filter true`, LHS filter/search/sort is applied to the projected query before pagination, for example:
+
+```text
+GET /api/products?page=1&pageSize=20&filter[Name][$containsi]=keyboard
+```
+
+### Orders
+
+Orders snapshot product name/price into items and support guarded status changes through `Pending`, `Processing`, `Completed` and `Cancelled`.
+
+Creating an order decrements stock transactionally. Cancelling an order restores stock. Order domain events are raised for create/complete/cancel.
+
+Orders are intentionally not cached through Redis.
+
+### Employees
+
+Employees reuse the existing `AppUser` aggregate. Admin can create/change role/change status; Manager has view access. Authorization is enforced through permission policies rather than direct role checks in endpoints.
+
+With `--filter true`, Employee list filtering/sorting is evaluated before pagination.
+
+### Reports
+
+Reports include revenue, order-status totals and top products. They read directly from operational data and are intentionally not cached, avoiding stale report values.
+
+### Settings
+
+Store settings include store name/email/phone, currency, timezone and low-stock threshold. `settings.update` controls modification access.
 
 ## Projection / Model convention
 
 Commands receive explicit Models:
 
 ```text
-CreateTodoCommand(TodoModel Model)
+CreateProductCommand(ProductModel Model)
+UpdateProductCommand(Guid Id, ProductModel Model)
+CreateOrderCommand(CreateOrderModel Model)
 UpdateProfileCommand(UserProfileModel Model)
 ```
 
-Queries return Projections and pass their expression directly into the repository:
+Queries return Projections and pass EF-translatable selectors into repositories:
 
 ```text
-TodoProjection.MappingExpression
-UserProfileProjection.MappingExpression
-UserSummaryProjection.MappingExpression
+GetProductsQuery -> ProductProjection
+GetOrdersQuery   -> OrderSummaryProjection
+GetEmployeesQuery -> EmployeeProjection
 ```
 
-This keeps EF projection server-side rather than loading aggregates and mapping them in memory.
+This keeps database projection server-side instead of loading complete aggregates and mapping them in memory.
 
-## Todo pagination and filtering
+## Product concurrency
 
-Todo always returns `PaginationResponse<TodoProjection>`.
+`Product.ConcurrencyStamp` is a `Guid` configured with `.IsConcurrencyToken()`. Product updates and stock adjustments rotate the stamp.
 
-Without LHS filtering:
+If another request changes the same Product first, EF raises `DbUpdateConcurrencyException`. `UnitOfWork` translates the exception to `PersistenceConcurrencyException`, and the API maps it to **HTTP 409 Conflict** so stale writes cannot silently overwrite current stock.
 
-```text
-GET /api/todos?page=1&pageSize=20
-```
-
-With `--filter true`:
-
-```text
-GET /api/todos?page=1&pageSize=20&filter[Title][$containsi]=wash
-```
-
-The filtered repository path applies the entity specification, projects with `MappingExpression`, applies LHS filter/search/sort to the projection query, counts, then paginates.
-
-## Profile and MinIO avatar
+## Profile and MinIO uploads
 
 Profile is always present:
 
@@ -136,20 +163,31 @@ GET /api/profile
 PUT /api/profile
 ```
 
-When MinIO is enabled:
+When MinIO is enabled, avatar upload is added:
 
 ```text
 GET  /api/profile/avatar
 POST /api/profile/avatar
 ```
 
-The upload endpoint accepts `multipart/form-data` field `file`. Backend validation allows JPEG/PNG/WebP up to 5 MB and checks the file signature before uploading to MinIO. The user aggregate stores the object name; clients receive a temporary presigned download URL.
+The upload endpoint accepts real `multipart/form-data` field `file`. Backend validation allows JPEG/PNG/WebP up to 5 MB and checks the file signature before uploading. The user stores only the object key; clients receive a temporary presigned URL.
 
-`Minio__Endpoint` is the canonical ASP.NET configuration key for the internal API endpoint and `Minio__PublicEndpoint` must be browser-reachable for avatar download URLs. Docker Compose maps its `.env` aliases to these canonical keys when Docker is enabled.
+MinIO also enables multiple Product Images:
+
+```text
+GET    /api/products/{id}/images
+POST   /api/products/{id}/images
+DELETE /api/products/{id}/images/{imageId}
+PUT    /api/products/{id}/images/{imageId}/primary
+```
+
+The first image becomes primary, images can be promoted to primary, and the starter limits each product to a small image set. The database stores object keys, not temporary URLs.
+
+`Minio__Endpoint` is the canonical ASP.NET configuration key for the internal API endpoint and `Minio__PublicEndpoint` must be browser-reachable for presigned downloads. Docker Compose maps `.env` aliases to these canonical keys.
 
 ## Frontend
 
-React/Angular follow a Factory Mind-inspired split:
+React/Angular follow a feature-oriented split:
 
 ```text
 core/
@@ -157,14 +195,15 @@ core/
   auth/
 features/
   auth/
+  business/
   profile/
-  todos/
-  users/
   ai/       # optional
 shared/
 ```
 
-The starter UI includes authentication, profile editing, permission-aware user management, Todo paging, optional LHS Todo search, and optional AI. Avatar UI appears only with MinIO.
+The starter UI includes authentication, profile editing and a permission-aware Mini Store workspace with Dashboard, Products, Orders, Employees, Reports and Settings. Avatar UI appears only with MinIO. AI UI appears only when an AI provider is generated.
+
+The Angular dashboard periodically refreshes its direct API snapshot; Reports are fetched fresh rather than cached.
 
 If a frontend is generated:
 
@@ -176,9 +215,9 @@ npm run dev      # React
 # npm start      # Angular
 ```
 
-Frontend-specific environment variables belong to the frontend project and are separate from the backend configuration pipeline.
+Frontend-specific environment variables belong to the frontend project and remain separate from backend configuration.
 
-## EF migrations without Design package in API
+## EF migrations
 
 `src/TemplateApp.Migrations` is a dedicated design-time executable host. `Microsoft.EntityFrameworkCore.Design` is not required by the API project.
 
@@ -189,7 +228,7 @@ just migrations
 just migration-script
 ```
 
-Migration files live in Infrastructure. On API startup, pending migrations are automatically applied. Set `Database__AutoMigrate=false` through normal ASP.NET configuration when deployment infrastructure owns migration execution. With Docker, set `AUTO_MIGRATE=false` in `.env` and Compose maps it to `Database__AutoMigrate`.
+Migration files live in Infrastructure. On API startup, pending migrations are automatically applied. Set `Database__AutoMigrate=false` when deployment infrastructure owns migrations. With Docker, set `AUTO_MIGRATE=false` in `.env` and Compose maps it to `Database__AutoMigrate`.
 
 ## Docker commands
 
@@ -218,4 +257,4 @@ just prod-up
 
 `:prod` is the default GHCR image tag. Set `IMAGE_TAG=<full-commit-sha>` to roll back to an older tagged build.
 
-Production publishes only the required edge ports: frontend when present, API only for backend-only projects, and MinIO API `9000` when MinIO is enabled. DB, Redis, API-behind-frontend and MinIO console stay private.
+Production publishes only required edge ports: frontend when present, API only for backend-only projects, and MinIO API `9000` when MinIO is enabled. DB, Redis, API-behind-frontend and MinIO console remain private.
