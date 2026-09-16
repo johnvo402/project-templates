@@ -13,7 +13,9 @@ type Dashboard = {
   recentOrders: { id: string; orderNumber: string; customerName: string; status: string; totalAmount: number; createdAt: string }[];
 };
 type Product = { id: string; name: string; sku: string; price: number; stockQuantity: number; isActive: boolean; updatedAt: string };
+type ProductDraft = { name: string; sku: string; price: number; stockQuantity: number; isActive: boolean };
 type Order = { id: string; orderNumber: string; customerName: string; status: string; totalAmount: number; itemCount: number; createdAt: string };
+type OrderItemDraft = { productId: string; quantity: number };
 type Employee = { id: string; email: string; displayName: string; role: string; isActive: boolean; avatarUrl?: string | null; createdAt: string };
 type StoreSettings = { storeName: string; storeEmail: string; storePhone: string; currency: string; timezone: string; lowStockThreshold: number };
 
@@ -23,6 +25,8 @@ type Props = {
   aiPanel?: ReactNode;
 };
 
+const emptyProduct: ProductDraft = { name: '', sku: '', price: 0, stockQuantity: 0, isActive: true };
+const roles = ['Admin', 'Manager', 'Staff'];
 const money = (value: number, currency = 'USD') => new Intl.NumberFormat(undefined, { style: 'currency', currency }).format(value ?? 0);
 const shortDate = (value: string) => new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(new Date(value));
 const statusClass = (status: string) => `status status-${status.toLowerCase()}`;
@@ -30,6 +34,29 @@ const statusClass = (status: string) => `status status-${status.toLowerCase()}`;
 async function apiResult<T>(path: string, options?: RequestInit): Promise<T> {
   const response = await customFetch<ApiResponse<T>>(path, options);
   return response.results;
+}
+
+async function apiCommand(path: string, options: RequestInit): Promise<void> {
+  await customFetch<unknown>(path, options);
+}
+
+const json = (method: string, body?: unknown): RequestInit => ({
+  method,
+  headers: body === undefined ? undefined : { 'Content-Type': 'application/json' },
+  body: body === undefined ? undefined : JSON.stringify(body),
+});
+
+function errorMessage(error: unknown) {
+  if (error && typeof error === 'object') {
+    const record = error as Record<string, unknown>;
+    for (const key of ['detail', 'title', 'message']) if (typeof record[key] === 'string') return record[key] as string;
+    const errors = record.errors;
+    if (errors && typeof errors === 'object') {
+      const first = Object.values(errors as Record<string, unknown>)[0];
+      if (Array.isArray(first) && typeof first[0] === 'string') return first[0];
+    }
+  }
+  return 'The request could not be completed.';
 }
 
 export function BusinessWorkspace({ user, onProfileUpdated, aiPanel }: Props) {
@@ -59,9 +86,9 @@ export function BusinessWorkspace({ user, onProfileUpdated, aiPanel }: Props) {
     </aside>
     <section className="business-content">
       {section === 'dashboard' && <DashboardPanel />}
-      {section === 'products' && <ProductsPanel />}
-      {section === 'orders' && <OrdersPanel />}
-      {section === 'employees' && <EmployeesPanel />}
+      {section === 'products' && <ProductsPanel user={user} />}
+      {section === 'orders' && <OrdersPanel user={user} />}
+      {section === 'employees' && <EmployeesPanel user={user} />}
       {section === 'reports' && <ReportsPanel />}
       {section === 'settings' && <SettingsPanel canUpdate={can(user, 'settings.update')} />}
       {section === 'profile' && <ProfilePage user={user} onProfileUpdated={onProfileUpdated} />}
@@ -70,8 +97,8 @@ export function BusinessWorkspace({ user, onProfileUpdated, aiPanel }: Props) {
   </div>;
 }
 
-function PageHeader({ eyebrow, title, copy }: { eyebrow: string; title: string; copy: string }) {
-  return <header className="page-heading"><div><p className="eyebrow">{eyebrow}</p><h1>{title}</h1><p>{copy}</p></div></header>;
+function PageHeader({ eyebrow, title, copy, actions }: { eyebrow: string; title: string; copy: string; actions?: ReactNode }) {
+  return <header className="page-heading"><div><p className="eyebrow">{eyebrow}</p><h1>{title}</h1><p>{copy}</p></div>{actions && <div className="page-actions">{actions}</div>}</header>;
 }
 
 function useLoad<T>(loader: () => Promise<T>, dependencies: unknown[] = []) {
@@ -80,7 +107,7 @@ function useLoad<T>(loader: () => Promise<T>, dependencies: unknown[] = []) {
   const [loading, setLoading] = useState(true);
   const reload = useCallback(() => {
     setLoading(true); setError('');
-    return loader().then(setData).catch(error => setError(error instanceof Error ? error.message : 'Unable to load data.')).finally(() => setLoading(false));
+    return loader().then(setData).catch(error => setError(errorMessage(error))).finally(() => setLoading(false));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, dependencies);
   useEffect(() => { void reload(); }, [reload]);
@@ -91,6 +118,11 @@ function LoadState({ loading, error }: { loading: boolean; error: string }) {
   if (loading) return <div className="panel muted-panel">Loading data…</div>;
   if (error) return <div className="panel error-panel">{error}</div>;
   return null;
+}
+
+function MutationNotice({ message, error }: { message: string; error: string }) {
+  if (!message && !error) return null;
+  return <div className={`panel compact-notice ${error ? 'error-panel' : 'success-panel'}`}>{error || message}</div>;
 }
 
 function DashboardPanel() {
@@ -115,31 +147,193 @@ function DashboardPanel() {
   </>;
 }
 
-function ProductsPanel() {
+function ProductsPanel({ user }: { user: AuthUser }) {
   const state = useLoad(() => apiResult<PaginationResponse<Product>>('/api/products?page=1&pageSize=20'));
-  return <><PageHeader eyebrow="Sales" title="Products" copy="Catalog, pricing and stock at a glance." /><LoadState {...state} />
-    {state.data && <Table headers={['Product', 'SKU', 'Price', 'Stock', 'Status', 'Updated']} rows={state.data.data.map(product => [
+  const [editing, setEditing] = useState<Product | null>(null);
+  const [draft, setDraft] = useState<ProductDraft>(emptyProduct);
+  const [showForm, setShowForm] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [notice, setNotice] = useState('');
+  const [mutationError, setMutationError] = useState('');
+  const canCreate = can(user, 'products.create');
+  const canUpdate = can(user, 'products.update');
+  const canDelete = can(user, 'products.delete');
+
+  const openCreate = () => { setEditing(null); setDraft(emptyProduct); setShowForm(true); setNotice(''); setMutationError(''); };
+  const openEdit = (product: Product) => {
+    setEditing(product);
+    setDraft({ name: product.name, sku: product.sku, price: product.price, stockQuantity: product.stockQuantity, isActive: product.isActive });
+    setShowForm(true); setNotice(''); setMutationError('');
+  };
+  const save = async () => {
+    setSaving(true); setMutationError(''); setNotice('');
+    try {
+      if (editing) await apiCommand(`/api/products/${editing.id}`, json('PUT', draft));
+      else await apiCommand('/api/products', json('POST', draft));
+      setNotice(editing ? 'Product updated.' : 'Product created.');
+      setShowForm(false); setEditing(null); setDraft(emptyProduct); await state.reload();
+    } catch (error) { setMutationError(errorMessage(error)); } finally { setSaving(false); }
+  };
+  const remove = async (product: Product) => {
+    if (!window.confirm(`Delete ${product.name}?`)) return;
+    setMutationError(''); setNotice('');
+    try { await apiCommand(`/api/products/${product.id}`, { method: 'DELETE' }); setNotice('Product deleted.'); await state.reload(); }
+    catch (error) { setMutationError(errorMessage(error)); }
+  };
+
+  return <>
+    <PageHeader eyebrow="Sales" title="Products" copy="Catalog, pricing and stock at a glance." actions={<>
+      <button className="ghost" onClick={() => void state.reload()}>Refresh</button>
+      {canCreate && <button className="primary" onClick={openCreate}>Add product</button>}
+    </>} />
+    <LoadState {...state} /><MutationNotice message={notice} error={mutationError} />
+    {showForm && <article className="panel editor-panel">
+      <div className="panel-title"><h2>{editing ? 'Edit product' : 'New product'}</h2><button className="link-button" onClick={() => setShowForm(false)}>Close</button></div>
+      <div className="form-grid">
+        <label>Name<input value={draft.name} onChange={e => setDraft({ ...draft, name: e.target.value })} /></label>
+        <label>SKU<input value={draft.sku} onChange={e => setDraft({ ...draft, sku: e.target.value.toUpperCase() })} /></label>
+        <label>Price<input type="number" min="0" step="0.01" value={draft.price} onChange={e => setDraft({ ...draft, price: Number(e.target.value) })} /></label>
+        <label>Stock quantity<input type="number" min="0" value={draft.stockQuantity} onChange={e => setDraft({ ...draft, stockQuantity: Number(e.target.value) })} /></label>
+        <label className="check-field"><input type="checkbox" checked={draft.isActive} onChange={e => setDraft({ ...draft, isActive: e.target.checked })} /> Active</label>
+      </div>
+      <div className="form-actions"><button className="primary" disabled={saving || !draft.name.trim() || !draft.sku.trim()} onClick={() => void save()}>{saving ? 'Saving…' : editing ? 'Save changes' : 'Create product'}</button></div>
+    </article>}
+    {state.data && <Table headers={['Product', 'SKU', 'Price', 'Stock', 'Status', 'Updated', 'Actions']} rows={state.data.data.map(product => [
       product.name, product.sku, money(product.price), product.stockQuantity,
       <span className={product.isActive ? 'status status-completed' : 'status status-cancelled'}>{product.isActive ? 'Active' : 'Inactive'}</span>, shortDate(product.updatedAt),
+      <div className="row-actions">{canUpdate && <button onClick={() => openEdit(product)}>Edit</button>}{canDelete && <button className="danger-link" onClick={() => void remove(product)}>Delete</button>}</div>,
     ])} />}
   </>;
 }
 
-function OrdersPanel() {
+function OrdersPanel({ user }: { user: AuthUser }) {
   const state = useLoad(() => apiResult<PaginationResponse<Order>>('/api/orders?page=1&pageSize=20'));
-  return <><PageHeader eyebrow="Sales" title="Orders" copy="Track fulfillment status and order value." /><LoadState {...state} />
-    {state.data && <Table headers={['Order', 'Customer', 'Status', 'Items', 'Total', 'Created']} rows={state.data.data.map(order => [
+  const products = useLoad(() => apiResult<PaginationResponse<Product>>('/api/products?page=1&pageSize=100&isActive=true'));
+  const [showForm, setShowForm] = useState(false);
+  const [customerName, setCustomerName] = useState('');
+  const [customerPhone, setCustomerPhone] = useState('');
+  const [items, setItems] = useState<OrderItemDraft[]>([{ productId: '', quantity: 1 }]);
+  const [saving, setSaving] = useState(false);
+  const [notice, setNotice] = useState('');
+  const [mutationError, setMutationError] = useState('');
+  const canCreate = can(user, 'orders.create');
+  const canUpdate = can(user, 'orders.update-status');
+  const canCancel = can(user, 'orders.cancel');
+
+  const createOrder = async () => {
+    setSaving(true); setMutationError(''); setNotice('');
+    try {
+      await apiCommand('/api/orders', json('POST', {
+        customerName, customerPhone: customerPhone.trim() || null,
+        items: items.filter(item => item.productId).map(item => ({ productId: item.productId, quantity: item.quantity })),
+      }));
+      setNotice('Order created.'); setCustomerName(''); setCustomerPhone(''); setItems([{ productId: '', quantity: 1 }]); setShowForm(false); await state.reload();
+    } catch (error) { setMutationError(errorMessage(error)); } finally { setSaving(false); }
+  };
+  const updateStatus = async (order: Order, status: 'Processing' | 'Completed') => {
+    setMutationError(''); setNotice('');
+    try { await apiCommand(`/api/orders/${order.id}/status`, json('PUT', { status })); setNotice(`Order moved to ${status}.`); await state.reload(); }
+    catch (error) { setMutationError(errorMessage(error)); }
+  };
+  const cancelOrder = async (order: Order) => {
+    if (!window.confirm(`Cancel ${order.orderNumber}? Stock will be restored.`)) return;
+    setMutationError(''); setNotice('');
+    try { await apiCommand(`/api/orders/${order.id}/cancel`, { method: 'POST' }); setNotice('Order cancelled.'); await state.reload(); }
+    catch (error) { setMutationError(errorMessage(error)); }
+  };
+  const addItem = () => setItems(current => [...current, { productId: '', quantity: 1 }]);
+  const setItem = (index: number, patch: Partial<OrderItemDraft>) => setItems(current => current.map((item, i) => i === index ? { ...item, ...patch } : item));
+  const removeItem = (index: number) => setItems(current => current.length === 1 ? current : current.filter((_, i) => i !== index));
+
+  return <>
+    <PageHeader eyebrow="Sales" title="Orders" copy="Create orders and move them through fulfillment." actions={<>
+      <button className="ghost" onClick={() => void state.reload()}>Refresh</button>
+      {canCreate && <button className="primary" onClick={() => { setShowForm(true); setMutationError(''); setNotice(''); }}>New order</button>}
+    </>} />
+    <LoadState {...state} /><MutationNotice message={notice} error={mutationError} />
+    {showForm && <article className="panel editor-panel">
+      <div className="panel-title"><h2>New order</h2><button className="link-button" onClick={() => setShowForm(false)}>Close</button></div>
+      <div className="form-grid">
+        <label>Customer name<input value={customerName} onChange={e => setCustomerName(e.target.value)} /></label>
+        <label>Phone<input value={customerPhone} onChange={e => setCustomerPhone(e.target.value)} /></label>
+      </div>
+      <div className="order-items">
+        <div className="subheading"><strong>Items</strong><button className="ghost small" onClick={addItem}>Add item</button></div>
+        {items.map((item, index) => <div className="item-row" key={index}>
+          <select value={item.productId} onChange={e => setItem(index, { productId: e.target.value })}>
+            <option value="">Select product</option>
+            {products.data?.data.map(product => <option key={product.id} value={product.id}>{product.name} · {money(product.price)} · {product.stockQuantity} in stock</option>)}
+          </select>
+          <input aria-label="Quantity" type="number" min="1" value={item.quantity} onChange={e => setItem(index, { quantity: Math.max(1, Number(e.target.value)) })} />
+          <button className="link-button danger-link" onClick={() => removeItem(index)}>Remove</button>
+        </div>)}
+      </div>
+      <div className="form-actions"><button className="primary" disabled={saving || !customerName.trim() || !items.some(item => item.productId)} onClick={() => void createOrder()}>{saving ? 'Creating…' : 'Create order'}</button></div>
+    </article>}
+    {state.data && <Table headers={['Order', 'Customer', 'Status', 'Items', 'Total', 'Created', 'Actions']} rows={state.data.data.map(order => [
       order.orderNumber, order.customerName, <span className={statusClass(order.status)}>{order.status}</span>, order.itemCount, money(order.totalAmount), shortDate(order.createdAt),
+      <div className="row-actions">
+        {canUpdate && order.status === 'Pending' && <button onClick={() => void updateStatus(order, 'Processing')}>Process</button>}
+        {canUpdate && (order.status === 'Pending' || order.status === 'Processing') && <button onClick={() => void updateStatus(order, 'Completed')}>Complete</button>}
+        {canCancel && order.status !== 'Completed' && order.status !== 'Cancelled' && <button className="danger-link" onClick={() => void cancelOrder(order)}>Cancel</button>}
+      </div>,
     ])} />}
   </>;
 }
 
-function EmployeesPanel() {
+function EmployeesPanel({ user }: { user: AuthUser }) {
   const state = useLoad(() => apiResult<PaginationResponse<Employee>>('/api/employees?page=1&pageSize=20'));
-  return <><PageHeader eyebrow="Management" title="Employees" copy="Team access, roles and account status." /><LoadState {...state} />
-    {state.data && <Table headers={['Employee', 'Email', 'Role', 'Status', 'Joined']} rows={state.data.data.map(employee => [
+  const [showForm, setShowForm] = useState(false);
+  const [draft, setDraft] = useState({ email: '', password: '', displayName: '', role: 'Staff' });
+  const [saving, setSaving] = useState(false);
+  const [notice, setNotice] = useState('');
+  const [mutationError, setMutationError] = useState('');
+  const canCreate = can(user, 'employees.create');
+  const canUpdate = can(user, 'employees.update');
+  const canChangeRole = can(user, 'employees.change-role');
+
+  const createEmployee = async () => {
+    setSaving(true); setMutationError(''); setNotice('');
+    try {
+      await apiCommand('/api/employees', json('POST', draft));
+      setNotice('Employee created.'); setDraft({ email: '', password: '', displayName: '', role: 'Staff' }); setShowForm(false); await state.reload();
+    } catch (error) { setMutationError(errorMessage(error)); } finally { setSaving(false); }
+  };
+  const changeRole = async (employee: Employee, role: string) => {
+    setMutationError(''); setNotice('');
+    try { await apiCommand(`/api/employees/${employee.id}/role`, json('PUT', { role })); setNotice(`${employee.displayName}'s role updated.`); await state.reload(); }
+    catch (error) { setMutationError(errorMessage(error)); }
+  };
+  const setStatus = async (employee: Employee) => {
+    const next = !employee.isActive;
+    setMutationError(''); setNotice('');
+    try { await apiCommand(`/api/employees/${employee.id}/status`, json('PUT', { isActive: next })); setNotice(`${employee.displayName} ${next ? 'enabled' : 'disabled'}.`); await state.reload(); }
+    catch (error) { setMutationError(errorMessage(error)); }
+  };
+
+  return <>
+    <PageHeader eyebrow="Management" title="Employees" copy="Team access, roles and account status." actions={<>
+      <button className="ghost" onClick={() => void state.reload()}>Refresh</button>
+      {canCreate && <button className="primary" onClick={() => { setShowForm(true); setMutationError(''); setNotice(''); }}>Add employee</button>}
+    </>} />
+    <LoadState {...state} /><MutationNotice message={notice} error={mutationError} />
+    {showForm && <article className="panel editor-panel">
+      <div className="panel-title"><h2>New employee</h2><button className="link-button" onClick={() => setShowForm(false)}>Close</button></div>
+      <div className="form-grid">
+        <label>Display name<input value={draft.displayName} onChange={e => setDraft({ ...draft, displayName: e.target.value })} /></label>
+        <label>Email<input type="email" value={draft.email} onChange={e => setDraft({ ...draft, email: e.target.value })} /></label>
+        <label>Temporary password<input type="password" value={draft.password} onChange={e => setDraft({ ...draft, password: e.target.value })} /></label>
+        <label>Role<select value={draft.role} onChange={e => setDraft({ ...draft, role: e.target.value })}>{roles.map(role => <option key={role}>{role}</option>)}</select></label>
+      </div>
+      <div className="form-actions"><button className="primary" disabled={saving || !draft.displayName.trim() || !draft.email.trim() || !draft.password} onClick={() => void createEmployee()}>{saving ? 'Creating…' : 'Create employee'}</button></div>
+    </article>}
+    {state.data && <Table headers={['Employee', 'Email', 'Role', 'Status', 'Joined', 'Actions']} rows={state.data.data.map(employee => [
       <span className="person-cell">{employee.avatarUrl ? <img src={employee.avatarUrl} alt="" /> : <i>{employee.displayName.slice(0, 1).toUpperCase()}</i>}<strong>{employee.displayName}</strong></span>,
-      employee.email, employee.role, <span className={employee.isActive ? 'status status-completed' : 'status status-cancelled'}>{employee.isActive ? 'Active' : 'Disabled'}</span>, shortDate(employee.createdAt),
+      employee.email,
+      canChangeRole ? <select className="table-select" value={employee.role} onChange={e => void changeRole(employee, e.target.value)}>{roles.map(role => <option key={role}>{role}</option>)}</select> : employee.role,
+      <span className={employee.isActive ? 'status status-completed' : 'status status-cancelled'}>{employee.isActive ? 'Active' : 'Disabled'}</span>,
+      shortDate(employee.createdAt),
+      <div className="row-actions">{canUpdate && <button className={employee.isActive ? 'danger-link' : ''} onClick={() => void setStatus(employee)}>{employee.isActive ? 'Disable' : 'Enable'}</button>}</div>,
     ])} />}
   </>;
 }
@@ -164,7 +358,7 @@ function SettingsPanel({ canUpdate }: { canUpdate: boolean }) {
   const set = <K extends keyof StoreSettings>(key: K, value: StoreSettings[K]) => setDraft(current => current ? { ...current, [key]: value } : current);
   const save = async () => {
     setMessage('Saving…');
-    try { await apiResult<StoreSettings>('/api/settings', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(draft) }); setMessage('Settings saved.'); }
+    try { await apiResult<StoreSettings>('/api/settings', json('PUT', draft)); setMessage('Settings saved.'); }
     catch { setMessage('Could not save settings.'); }
   };
   return <><PageHeader eyebrow="System" title="Settings" copy="Store identity and operational defaults." />
