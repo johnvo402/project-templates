@@ -16,6 +16,7 @@ public sealed class Product : AggregateRoot<ProductId>
         IsActive = true;
         CreatedAt = DateTimeOffset.UtcNow;
         UpdatedAt = CreatedAt;
+        ConcurrencyStamp = Guid.NewGuid();
     }
 
     public string Name { get; private set; } = string.Empty;
@@ -25,6 +26,7 @@ public sealed class Product : AggregateRoot<ProductId>
     public bool IsActive { get; private set; }
     public DateTimeOffset CreatedAt { get; private set; }
     public DateTimeOffset UpdatedAt { get; private set; }
+    public Guid ConcurrencyStamp { get; private set; }
 
     public static Product Create(string name, string sku, decimal price, int stockQuantity)
     {
@@ -40,7 +42,7 @@ public sealed class Product : AggregateRoot<ProductId>
         Price = price;
         StockQuantity = stockQuantity;
         IsActive = isActive;
-        UpdatedAt = DateTimeOffset.UtcNow;
+        Touch();
     }
 
     public void AdjustStock(int quantityDelta)
@@ -49,7 +51,13 @@ public sealed class Product : AggregateRoot<ProductId>
             throw new DomainException("Product stock cannot be negative.");
 
         StockQuantity += quantityDelta;
+        Touch();
+    }
+
+    private void Touch()
+    {
         UpdatedAt = DateTimeOffset.UtcNow;
+        ConcurrencyStamp = Guid.NewGuid();
     }
 
     private static void Validate(string name, string sku, decimal price, int stockQuantity)

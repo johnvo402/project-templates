@@ -1,6 +1,7 @@
 using FluentValidation;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
+using TemplateApp.Application.Common.Exceptions;
 using TemplateApp.Domain.Common;
 
 namespace TemplateApp.Api.Errors;
@@ -15,6 +16,13 @@ public sealed class GlobalExceptionHandler(IProblemDetailsService problemDetails
         var problem = exception switch
         {
             ValidationException validationException => CreateValidationProblem(validationException),
+            PersistenceConcurrencyException concurrencyException => new ProblemDetails
+            {
+                Status = StatusCodes.Status409Conflict,
+                Title = "Concurrency conflict",
+                Detail = concurrencyException.Message,
+                Extensions = { ["code"] = PersistenceConcurrencyException.ErrorCode }
+            },
             DomainException domainException => new ProblemDetails
             {
                 Status = StatusCodes.Status400BadRequest,
