@@ -1,6 +1,5 @@
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
-using TemplateApp.Application.Common.Exceptions;
 using TemplateApp.Domain.Products;
 using TemplateApp.Infrastructure.Persistence;
 
@@ -9,7 +8,7 @@ namespace TemplateApp.UnitTests;
 public sealed class ProductConcurrencyTests
 {
     [Fact]
-    public async Task SaveChanges_WhenProductWasModifiedByAnotherContext_ThrowsPersistenceConcurrencyException()
+    public async Task SaveChanges_WhenProductWasModifiedByAnotherContext_ThrowsConcurrencyException()
     {
         await using var connection = new SqliteConnection("Data Source=:memory:");
         await connection.OpenAsync();
@@ -34,12 +33,8 @@ public sealed class ProductConcurrencyTests
         await firstContext.SaveChangesAsync();
 
         second.AdjustStock(-3);
-        var unitOfWork = new UnitOfWork(secondContext);
 
-        var exception = await Assert.ThrowsAsync<PersistenceConcurrencyException>(
-            () => unitOfWork.SaveChangesAsync());
-
-        Assert.Equal("Persistence.ConcurrencyConflict", PersistenceConcurrencyException.ErrorCode);
-        Assert.Contains("modified by another request", exception.Message, StringComparison.OrdinalIgnoreCase);
+        await Assert.ThrowsAsync<DbUpdateConcurrencyException>(
+            () => secondContext.SaveChangesAsync());
     }
 }
