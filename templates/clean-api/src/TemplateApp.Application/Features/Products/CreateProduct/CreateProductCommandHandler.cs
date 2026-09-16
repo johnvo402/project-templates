@@ -1,6 +1,7 @@
 using Mediator;
 using TemplateApp.Application.Abstractions.Persistence;
 using TemplateApp.Application.Common.Results;
+using TemplateApp.Application.Features.Products.Common;
 using TemplateApp.Domain.Common;
 using TemplateApp.Domain.Products;
 using TemplateApp.Domain.Products.Specifications;
@@ -33,6 +34,9 @@ public sealed class CreateProductCommandHandler(IUnitOfWork unitOfWork)
 
             await repository.AddAsync(product, cancellationToken);
             await unitOfWork.SaveAsync(cancellationToken);
+#if REDIS
+            await ProductCache.InvalidateAsync(unitOfWork, cancellationToken);
+#endif
             return Result<Guid>.Success(product.Id.Value);
         }
         catch (DomainException exception)
