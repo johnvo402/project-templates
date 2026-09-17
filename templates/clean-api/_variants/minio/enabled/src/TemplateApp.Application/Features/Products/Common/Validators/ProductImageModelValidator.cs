@@ -1,14 +1,14 @@
 using FluentValidation;
-using TemplateApp.Application.Features.Products.Images.Common.Models;
+using TemplateApp.Application.Features.Products.Common.Models;
 
-namespace TemplateApp.Application.Features.Products.Images.Common.Validators;
+namespace TemplateApp.Application.Features.Products.Common.Validators;
 
-public sealed class ProductImageUploadModelValidator : AbstractValidator<ProductImageUploadModel>
+public sealed class ProductImageModelValidator : AbstractValidator<ProductImageModel>
 {
     private const int MaxBytes = 5 * 1024 * 1024;
     private static readonly string[] AllowedTypes = ["image/jpeg", "image/png", "image/webp"];
 
-    public ProductImageUploadModelValidator()
+    public ProductImageModelValidator()
     {
         RuleFor(model => model.FileName).NotEmpty().MaximumLength(255);
         RuleFor(model => model.ContentType)

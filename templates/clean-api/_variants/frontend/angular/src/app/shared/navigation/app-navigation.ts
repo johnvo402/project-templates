@@ -11,9 +11,6 @@ export const APP_NAVIGATION: readonly AppNavigationItem[] = [
   { label: 'Dashboard', path: '/dashboard', group: 'Overview', permission: 'dashboard.view' },
   { label: 'Orders', path: '/orders', group: 'Sales', permission: 'orders.view' },
   { label: 'Products', path: '/products', group: 'Sales', permission: 'products.view' },
-//#if (minio)
-  { label: 'Product Images', path: '/products/images', group: 'Sales', permission: 'products.view' },
-//#endif
   { label: 'Employees', path: '/employees', group: 'Management', permission: 'employees.view' },
   { label: 'Reports', path: '/reports', group: 'Analytics', permission: 'reports.view' },
   { label: 'Settings', path: '/settings', group: 'System', permission: 'settings.view' },

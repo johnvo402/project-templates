@@ -125,8 +125,9 @@ Products contain:
 - stock quantity
 - active state
 - created / updated timestamps
+- one optional image when MinIO is enabled
 
-Queries return `ProductProjection`; create/update commands receive `ProductModel`.
+Queries return `ProductProjection`; create/update commands receive `ProductModel` plus an optional image model only in MinIO builds.
 
 Without LHS filtering:
 
@@ -200,7 +201,7 @@ If another request changes the same Product first, EF raises `DbUpdateConcurrenc
 
 ## MinIO uploads
 
-When `--minio true`, the generated app adds real file upload flows. The database stores object keys; temporary presigned URLs are produced for clients.
+When `--minio true`, the generated app adds real file upload flows and stores object keys in the database.
 
 ### Profile avatar
 
@@ -211,20 +212,20 @@ POST /api/profile/avatar
 
 The upload endpoint accepts `multipart/form-data` field `file`. JPEG, PNG and WebP files are accepted up to 5 MB, with both MIME and file-signature validation.
 
-### Product images
+### Product image
+
+There is no separate Product Images endpoint or image collection. Product create/update themselves accept `multipart/form-data` with the normal Product fields and an optional `image` field:
 
 ```text
-GET    /api/products/{id}/images
-POST   /api/products/{id}/images
-DELETE /api/products/{id}/images/{imageId}
-PUT    /api/products/{id}/images/{imageId}/primary
+POST /api/products
+PUT  /api/products/{id}
 ```
 
-Products support a small image set. The first uploaded image becomes primary, another image can later be promoted, and storage upload is compensated if persistence fails.
+Each Product has at most one image. Create may include it. Update without a new image leaves the existing object and database reference untouched. Update with a replacement uploads the new object, persists the new reference, then deletes the previous object; if persistence fails, the new upload is compensated. Product deletion performs best-effort cleanup of its stored image.
 
-`Minio__Endpoint` is the internal API endpoint. `Minio__PublicEndpoint` must be browser-reachable for presigned downloads.
+`Minio__Endpoint` is the internal API endpoint. `Minio__PublicEndpoint` remains available for browser-reachable object-storage URLs when an application needs them.
 
-When MinIO is disabled, storage packages and upload implementations are not generated into the application surface.
+When MinIO is disabled, Product image storage state, multipart Product forms and upload implementations are not generated into the application surface.
 
 ## Redis
 
@@ -260,7 +261,7 @@ The starter UI includes:
 - Reports
 - Settings
 
-Avatar/storage UI is generated only with MinIO. AI UI is generated only when an AI provider is selected.
+Avatar and the inline Product image picker are generated only with MinIO. AI UI is generated only when an AI provider is selected.
 
 The dashboard obtains fresh API snapshots. Reports are fetched from their direct API endpoints rather than a client-side business cache.
 
