@@ -1,6 +1,4 @@
-//#if (minio || (ai != "none"))
 import type { ReactNode } from 'react';
-//#endif
 import { Navigate, Route, Routes } from 'react-router';
 import type { AuthUser } from '../core/auth/auth-session';
 import { DashboardPage } from '../features/dashboard/pages/DashboardPage';
@@ -11,32 +9,22 @@ import { ProfilePage } from '../features/profile/ProfilePage';
 import { ReportsPage } from '../features/reports/pages/ReportsPage';
 import { SettingsPage } from '../features/settings/pages/SettingsPage';
 import { AppShell } from '../shared/components/AppShell';
-import { getDefaultPath, getVisibleNavigation } from './app-navigation';
+import { getDefaultPath, getVisibleNavigation, type AppNavigationItem } from './app-navigation';
+
+export type AppRouteExtension = {
+  navigation: AppNavigationItem;
+  element: ReactNode;
+};
 
 type Props = {
   user: AuthUser;
   onLogout: () => void;
   onProfileUpdated: (displayName: string) => void;
-//#if (ai != "none")
-  aiPage?: ReactNode;
-//#endif
-//#if (minio)
-  productImagesPage?: ReactNode;
-//#endif
+  extensions?: readonly AppRouteExtension[];
 };
 
-export function AuthenticatedApp({
-  user,
-  onLogout,
-  onProfileUpdated,
-//#if (ai != "none")
-  aiPage,
-//#endif
-//#if (minio)
-  productImagesPage,
-//#endif
-}: Props) {
-  const navigation = getVisibleNavigation(user);
+export function AuthenticatedApp({ user, onLogout, onProfileUpdated, extensions = [] }: Props) {
+  const navigation = getVisibleNavigation(user, extensions.map(extension => extension.navigation));
   const hasRoute = (path: string) => navigation.some(item => item.path === path);
   const fallbackPath = getDefaultPath(navigation);
 
@@ -50,13 +38,10 @@ export function AuthenticatedApp({
         {hasRoute('/employees') && <Route path="/employees" element={<EmployeesPage user={user} />} />}
         {hasRoute('/reports') && <Route path="/reports" element={<ReportsPage />} />}
         {hasRoute('/settings') && <Route path="/settings" element={<SettingsPage user={user} />} />}
-        {hasRoute('/profile') && <Route path="/profile" element={<ProfilePage user={user} onProfileUpdated={onProfileUpdated} />} />
-//#if (minio)
-        {productImagesPage && hasRoute('/products/images') && <Route path="/products/images" element={productImagesPage} />}
-//#endif
-//#if (ai != "none")
-        {aiPage && hasRoute('/ai') && <Route path="/ai" element={aiPage} />}
-//#endif
+        {hasRoute('/profile') && <Route path="/profile" element={<ProfilePage user={user} onProfileUpdated={onProfileUpdated} />} />}
+        {extensions.map(extension => hasRoute(extension.navigation.path)
+          ? <Route key={extension.navigation.path} path={extension.navigation.path} element={extension.element} />
+          : null)}
         <Route path="*" element={<Navigate to={fallbackPath} replace />} />
       </Routes>
     </AppShell>
