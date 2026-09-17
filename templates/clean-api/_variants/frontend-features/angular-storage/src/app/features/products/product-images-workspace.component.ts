@@ -4,9 +4,10 @@ import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 import { PaginationResponse } from '../../core/api/api.models';
 import { AuthSessionService } from '../../core/auth/auth-session.service';
-import { BusinessApiService, Product } from '../business/business-api.service';
 import { BusinessPaginationComponent } from '../business/business-pagination.component';
 import { FILTER_ENABLED, type BusinessListQuery } from '../../shared/query/business-query';
+import { ProductsApiService } from './data-access/products-api.service';
+import type { Product } from './product.models';
 import { ProductImage, ProductImagesApiService } from './product-images-api.service';
 
 @Component({
@@ -36,13 +37,13 @@ import { ProductImage, ProductImagesApiService } from './product-images-api.serv
   </div>`
 })
 export class ProductImagesWorkspaceComponent implements OnInit {
-  private readonly businessApi=inject(BusinessApiService);private readonly imagesApi=inject(ProductImagesApiService);readonly auth=inject(AuthSessionService);
+  private readonly productsApi=inject(ProductsApiService);private readonly imagesApi=inject(ProductImagesApiService);readonly auth=inject(AuthSessionService);
   readonly filterEnabled=FILTER_ENABLED;readonly maxImages=8;readonly maxBytes=5*1024*1024;readonly allowedTypes=new Set(['image/jpeg','image/png','image/webp']);
   query:BusinessListQuery={page:1,pageSize:10,sort:'Name:asc'};keyword='';productPage?:PaginationResponse<Product>;selected?:Product;images:ProductImage[]=[];
   productsLoading=true;imagesLoading=false;busy=false;error='';notice='';
   get canUpdate(){return this.auth.can('products.update');}
   ngOnInit(){void this.loadProducts();}
-  async loadProducts(){this.productsLoading=true;this.error='';try{const page=await firstValueFrom(this.businessApi.getProducts(this.query));this.productPage=page;const next=this.selected&&page.data.some(product=>product.id===this.selected!.id)?this.selected:page.data[0];if(next?.id!==this.selected?.id){this.selected=next;if(next)await this.loadImages();else this.images=[];}else if(next)this.selected=next;}catch(error){this.error=this.message(error);}finally{this.productsLoading=false;}}
+  async loadProducts(){this.productsLoading=true;this.error='';try{const page=await firstValueFrom(this.productsApi.list(this.query));this.productPage=page;const next=this.selected&&page.data.some(product=>product.id===this.selected!.id)?this.selected:page.data[0];if(next?.id!==this.selected?.id){this.selected=next;if(next)await this.loadImages();else this.images=[];}else if(next)this.selected=next;}catch(error){this.error=this.message(error);}finally{this.productsLoading=false;}}
   selectProduct(product:Product){if(this.selected?.id===product.id)return;this.selected=product;void this.loadImages();}
   async loadImages(){if(!this.selected)return;this.imagesLoading=true;this.error='';try{this.images=await firstValueFrom(this.imagesApi.list(this.selected.id));}catch(error){this.images=[];this.error=this.message(error);}finally{this.imagesLoading=false;}}
   refreshImages(){void this.loadImages();}
