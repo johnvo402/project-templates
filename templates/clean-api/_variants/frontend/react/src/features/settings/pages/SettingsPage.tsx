@@ -3,10 +3,10 @@ import { Box, Button, Paper, TextField, Typography } from '@mui/material';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { can, type AuthUser } from '../../../core/auth/auth-session';
-import { AsyncState } from '../../../shared/components/AsyncState';
-import { PageHeader } from '../../../shared/components/PageHeader';
-import { useNotifications } from '../../../shared/feedback/NotificationProvider';
-import { getErrorMessage } from '../../../shared/utils/http-error';
+import { AsyncState } from '../../../components/AsyncState';
+import { PageHeader } from '../../../components/PageHeader';
+import { useNotifications } from '../../../feedback/NotificationProvider';
+import { getErrorMessage } from '../../../utils/http-error';
 import { settingsApi } from '../api/settings.api';
 import type { StoreSettings } from '../settings.models';
 

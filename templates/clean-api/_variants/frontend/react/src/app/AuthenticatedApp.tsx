@@ -8,7 +8,7 @@ import { ProductsPage } from '../features/products/pages/ProductsPage';
 import { ProfilePage } from '../features/profile/ProfilePage';
 import { ReportsPage } from '../features/reports/pages/ReportsPage';
 import { SettingsPage } from '../features/settings/pages/SettingsPage';
-import { AppShell } from '../shared/components/AppShell';
+import { AppShell } from '../components/AppShell';
 import { getDefaultPath, getVisibleNavigation, type AppNavigationItem } from './app-navigation';
 
 export type AppRouteExtension = {

@@ -1,7 +1,7 @@
 import AddOutlinedIcon from '@mui/icons-material/AddOutlined';
 import { Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, MenuItem, Stack, TextField, Typography } from '@mui/material';
 import { useEffect, useState } from 'react';
-import { formatCurrency } from '../../../shared/utils/formatters';
+import { formatCurrency } from '../../../utils/formatters';
 import type { CreateOrderModel, OrderItemModel, ProductOption } from '../order.models';
 
 type Props = {

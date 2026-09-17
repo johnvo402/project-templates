@@ -1,6 +1,6 @@
 import type { ApiResponse, PaginationResponse } from '../../../core/api/api-types';
 import { customFetch } from '../../../core/api/custom-fetch';
-import { buildBusinessListUrl, type BusinessListQuery } from '../../../shared/query/business-query';
+import { buildBusinessListUrl, type BusinessListQuery } from '../../../query/business-query';
 import type { CreateEmployeeModel, Employee, EmployeeRole } from '../employee.models';
 
 async function result<T>(path: string): Promise<T> {

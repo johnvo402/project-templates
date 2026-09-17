@@ -1,10 +1,10 @@
 import RefreshOutlinedIcon from '@mui/icons-material/RefreshOutlined';
 import { Box, Button } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
-import { AsyncState } from '../../../shared/components/AsyncState';
-import { PageHeader } from '../../../shared/components/PageHeader';
-import { formatCurrency } from '../../../shared/utils/formatters';
-import { getErrorMessage } from '../../../shared/utils/http-error';
+import { AsyncState } from '../../../components/AsyncState';
+import { PageHeader } from '../../../components/PageHeader';
+import { formatCurrency } from '../../../utils/formatters';
+import { getErrorMessage } from '../../../utils/http-error';
 import { dashboardApi } from '../api/dashboard.api';
 import { DashboardMetricCard } from '../components/DashboardMetricCard';
 import { RecentOrdersPanel } from '../components/RecentOrdersPanel';

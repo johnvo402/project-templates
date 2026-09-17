@@ -1,4 +1,4 @@
-import { buildFilterQuery, type FilterInput } from '../../../lib/filter';
+import { buildFilterQuery, type FilterInput } from '../../lib/filter';
 
 export type ListFilter = {
   field:string;

@@ -6,10 +6,10 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { firstValueFrom } from 'rxjs';
 import { AuthSessionService } from '../../core/auth/auth-session.service';
-import { AsyncStateComponent } from '../../shared/components/async-state.component';
-import { PageHeaderComponent } from '../../shared/components/page-header.component';
-import { NotificationService } from '../../shared/feedback/notification.service';
-import { getErrorMessage } from '../../shared/utils/http-error';
+import { AsyncStateComponent } from '../../components/async-state.component';
+import { PageHeaderComponent } from '../../components/page-header.component';
+import { NotificationService } from '../../feedback/notification.service';
+import { getErrorMessage } from '../../utils/http-error';
 import { ProfileApiService } from './profile-api.service';
 
 @Component({ selector:'app-profile-page', standalone:true, imports:[ReactiveFormsModule,MatButtonModule,MatCardModule,MatFormFieldModule,MatInputModule,PageHeaderComponent,AsyncStateComponent], styles:[`:host{display:block}mat-card{max-width:760px;border-radius:16px}mat-card-content{display:grid;gap:16px;padding:24px}.bio-count{margin-top:-12px;text-align:right;color:var(--mat-sys-on-surface-variant);font-size:12px}`], template:`<app-page-header eyebrow="Account" title="Profile" description="Keep your public display name and short bio up to date."><div pageActions><button mat-flat-button (click)="save()" [disabled]="saving()||form.invalid">{{saving()?'Saving…':'Save profile'}}</button></div></app-page-header><app-async-state [loading]="loading()" [error]="error()" [showRetry]="true" (retry)="load()"/>@if(!loading()&&!error()){<mat-card appearance="outlined"><mat-card-content [formGroup]="form"><mat-form-field appearance="outline"><mat-label>Display name</mat-label><input matInput maxlength="120" formControlName="displayName"/></mat-form-field><mat-form-field appearance="outline"><mat-label>Email</mat-label><input matInput [value]="email()" disabled/></mat-form-field><mat-form-field appearance="outline"><mat-label>Bio</mat-label><textarea matInput rows="4" maxlength="500" formControlName="bio"></textarea></mat-form-field><span class="bio-count">{{form.controls.bio.value.length}}/500</span></mat-card-content></mat-card>}` })

@@ -1,5 +1,5 @@
 import { Box, Divider, Paper, Stack, Typography } from '@mui/material';
-import { formatCurrency } from '../../../shared/utils/formatters';
+import { formatCurrency } from '../../../utils/formatters';
 import type { DashboardTopProduct } from '../dashboard.models';
 
 type Props = { products: DashboardTopProduct[] };

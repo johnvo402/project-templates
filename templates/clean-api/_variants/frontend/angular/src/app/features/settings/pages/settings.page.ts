@@ -6,10 +6,10 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { firstValueFrom } from 'rxjs';
 import { AuthSessionService } from '../../../core/auth/auth-session.service';
-import { AsyncStateComponent } from '../../../shared/components/async-state.component';
-import { PageHeaderComponent } from '../../../shared/components/page-header.component';
-import { NotificationService } from '../../../shared/feedback/notification.service';
-import { getErrorMessage } from '../../../shared/utils/http-error';
+import { AsyncStateComponent } from '../../../components/async-state.component';
+import { PageHeaderComponent } from '../../../components/page-header.component';
+import { NotificationService } from '../../../feedback/notification.service';
+import { getErrorMessage } from '../../../utils/http-error';
 import { SettingsApiService } from '../data-access/settings-api.service';
 
 @Component({ selector:'app-settings-page', standalone:true, imports:[ReactiveFormsModule,MatButtonModule,MatCardModule,MatFormFieldModule,MatInputModule,PageHeaderComponent,AsyncStateComponent], styles:[`:host{display:block}mat-card{border-radius:16px}mat-card-content{padding:24px}.form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.full{grid-column:1/-1}@media(max-width:699px){.form-grid{grid-template-columns:1fr}}`], template:`<app-page-header eyebrow="System" title="Settings" description="Store identity and operational defaults."><div pageActions>@if(canUpdate){<button mat-flat-button (click)="save()" [disabled]="saving()||form.invalid">{{saving()?'Saving…':'Save settings'}}</button>}</div></app-page-header><app-async-state [loading]="loading()" [error]="error()" [showRetry]="true" (retry)="load()"/>@if(!loading()&&!error()){<mat-card appearance="outlined"><mat-card-content><form [formGroup]="form" class="form-grid"><mat-form-field appearance="outline"><mat-label>Store name</mat-label><input matInput formControlName="storeName"/></mat-form-field><mat-form-field appearance="outline"><mat-label>Email</mat-label><input matInput type="email" formControlName="storeEmail"/></mat-form-field><mat-form-field appearance="outline"><mat-label>Phone</mat-label><input matInput formControlName="storePhone"/></mat-form-field><mat-form-field appearance="outline"><mat-label>Currency</mat-label><input matInput maxlength="3" formControlName="currency" (input)="uppercaseCurrency()"/></mat-form-field><mat-form-field appearance="outline"><mat-label>Timezone</mat-label><input matInput formControlName="timezone"/></mat-form-field><mat-form-field appearance="outline"><mat-label>Low-stock threshold</mat-label><input matInput type="number" min="0" formControlName="lowStockThreshold"/></mat-form-field></form></mat-card-content></mat-card>}` })

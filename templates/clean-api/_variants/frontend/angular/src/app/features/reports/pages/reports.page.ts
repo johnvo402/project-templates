@@ -1,9 +1,9 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { firstValueFrom } from 'rxjs';
-import { AsyncStateComponent } from '../../../shared/components/async-state.component';
-import { PageHeaderComponent } from '../../../shared/components/page-header.component';
-import { getErrorMessage } from '../../../shared/utils/http-error';
+import { AsyncStateComponent } from '../../../components/async-state.component';
+import { PageHeaderComponent } from '../../../components/page-header.component';
+import { getErrorMessage } from '../../../utils/http-error';
 import { OrderStatusReportComponent } from '../components/order-status-report.component';
 import { TopProductsReportComponent } from '../components/top-products-report.component';
 import { ReportsApiService } from '../data-access/reports-api.service';

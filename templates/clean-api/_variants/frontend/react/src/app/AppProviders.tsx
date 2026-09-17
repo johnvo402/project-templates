@@ -3,7 +3,7 @@ import { ThemeProvider } from '@mui/material/styles';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useState, type PropsWithChildren } from 'react';
 import { BrowserRouter } from 'react-router';
-import { NotificationProvider } from '../shared/feedback/NotificationProvider';
+import { NotificationProvider } from '../feedback/NotificationProvider';
 import { appTheme } from './theme';
 
 export function AppProviders({ children }: PropsWithChildren) {

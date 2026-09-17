@@ -1,6 +1,6 @@
 import { Box, Button, Chip } from '@mui/material';
 import { DataGrid, type GridColDef } from '@mui/x-data-grid';
-import { formatCurrency, formatDate } from '../../../shared/utils/formatters';
+import { formatCurrency, formatDate } from '../../../utils/formatters';
 import type { Product } from '../product.models';
 
 type Props = {

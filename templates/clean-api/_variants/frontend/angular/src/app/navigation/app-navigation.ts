@@ -1,4 +1,4 @@
-import { AuthUser } from '../../core/auth/auth-session.service';
+import { AuthUser } from '../core/auth/auth-session.service';
 
 export type AppNavigationItem = {
   label: string;

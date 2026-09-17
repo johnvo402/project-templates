@@ -1,5 +1,5 @@
 import { Paper, Table, TableBody, TableCell, TableHead, TableRow, Typography } from '@mui/material';
-import { formatCurrency } from '../../../shared/utils/formatters';
+import { formatCurrency } from '../../../utils/formatters';
 import type { TopProductReport } from '../report.models';
 
 export function TopProductsReportCard({ rows }: { rows: TopProductReport[] }) {

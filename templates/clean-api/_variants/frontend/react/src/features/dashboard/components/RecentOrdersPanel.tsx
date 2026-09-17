@@ -1,5 +1,5 @@
 import { Box, Chip, Divider, Paper, Stack, Typography } from '@mui/material';
-import { formatCurrency, formatDateTime } from '../../../shared/utils/formatters';
+import { formatCurrency, formatDateTime } from '../../../utils/formatters';
 import type { DashboardRecentOrder } from '../dashboard.models';
 
 type Props = { orders: DashboardRecentOrder[] };
