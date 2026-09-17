@@ -2,7 +2,7 @@ using TemplateApp.Domain.Common;
 
 namespace TemplateApp.Domain.Products;
 
-public sealed class Product : AggregateRoot<ProductId>
+public sealed partial class Product : AggregateRoot<ProductId>
 {
     private Product() : base(default) { }
 
