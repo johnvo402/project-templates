@@ -28,8 +28,10 @@ public static class BusinessQuestionPolicy
     [
         (BusinessQuestionTopic.Revenue, ["revenue", "sales", "doanh thu", "bán hàng", "ban hang"]),
         (BusinessQuestionTopic.Orders, ["order", "orders", "pending", "processing", "completed", "cancelled", "đơn hàng", "don hang", "trạng thái đơn"]),
-        (BusinessQuestionTopic.Products, ["product", "products", "best seller", "best-selling", "top product", "sản phẩm", "san pham", "bán chạy", "ban chay"]),
+        // Match inventory before the broader product terms so questions such as
+        // "sản phẩm sắp hết tồn kho" are treated as inventory questions.
         (BusinessQuestionTopic.Inventory, ["inventory", "stock", "low stock", "out of stock", "tồn kho", "ton kho", "sắp hết", "sap het", "hết hàng"]),
+        (BusinessQuestionTopic.Products, ["product", "products", "best seller", "best-selling", "top product", "sản phẩm", "san pham", "bán chạy", "ban chay"]),
         (BusinessQuestionTopic.Employees, ["employee", "employees", "staff count", "nhân viên", "nhan vien", "số nhân viên"]),
         (BusinessQuestionTopic.Operations, ["recent", "trend", "recommend", "recommendation", "improve", "action", "gần đây", "gan day", "xu hướng", "đề xuất", "cải thiện", "nên làm gì"]),
         (BusinessQuestionTopic.Overview, ["business", "store", "shop", "overview", "performance", "how are we doing", "kinh doanh", "cửa hàng", "cua hang", "tổng quan", "tình hình", "hoạt động"])
