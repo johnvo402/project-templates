@@ -84,7 +84,7 @@ jobs:
         shell: bash
         run: |
           if [ "${{ matrix.minio }}" = "true" ]; then
-            required_backend=(IObjectStorage.cs ProductImageModel.cs Product.Storage.cs ProfileAvatarEndpointRegistration.cs)
+            required_backend=(IObjectStorage.cs ProductImageModel.cs Product.storage.cs ProfileAvatarEndpointRegistration.cs)
             for name in "${required_backend[@]}"; do
               if ! find "$SMOKE_OUTPUT/src" -type f -name "$name" -print -quit | grep -q .; then
                 echo "Expected MinIO artifact '$name' was not generated." >&2
@@ -120,7 +120,7 @@ jobs:
             leaked_backend="$(find "$SMOKE_OUTPUT/src" -type f \( \
               -name 'IObjectStorage.cs' \
               -o -name 'ProductImageModel.cs' \
-              -o -name 'Product.Storage.cs' \
+              -o -name 'Product.storage.cs' \
               -o -name 'ProfileAvatarEndpointRegistration.cs' \
               -o -iname '*Minio*' \
             \) -print || true)"
