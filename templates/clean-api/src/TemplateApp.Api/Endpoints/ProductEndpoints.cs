@@ -5,6 +5,9 @@ using Microsoft.AspNetCore.Mvc;
 using TemplateApp.Api.Authentication;
 using TemplateApp.Api.Responses;
 using TemplateApp.Application.Common.Querying;
+//#if (minio)
+using TemplateApp.Application.Common.Results;
+//#endif
 using TemplateApp.Application.Features.Products.Common.Models;
 using TemplateApp.Application.Features.Products.CreateProduct;
 using TemplateApp.Application.Features.Products.DeleteProduct;
@@ -16,7 +19,9 @@ namespace TemplateApp.Api.Endpoints;
 
 public static class ProductEndpoints
 {
+//#if (minio)
     private const long MaxProductImageBytes = 5 * 1024 * 1024;
+//#endif
 
     public static IEndpointRouteBuilder MapProductEndpoints(this IEndpointRouteBuilder endpoints)
     {
