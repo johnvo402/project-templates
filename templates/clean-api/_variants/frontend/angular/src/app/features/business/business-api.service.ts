@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { map, Observable } from 'rxjs';
 import { ApiResponse, PaginationResponse } from '../../core/api/api.models';
-import { buildActiveProductsUrl, buildBusinessListUrl, type BusinessListQuery } from './business-query';
+import { buildActiveProductsUrl, buildBusinessListUrl, type BusinessListQuery } from '../../shared/query/business-query';
 
 export type Dashboard = {
   revenueToday:number; revenueThisMonth:number; totalOrders:number; pendingOrders:number;
