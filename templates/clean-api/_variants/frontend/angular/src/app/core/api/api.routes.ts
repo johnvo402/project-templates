@@ -8,5 +8,6 @@ export const API_ROUTES = {
   employees:{ root:`${API_BASE}/employees`, byId:(id:string)=>`${API_BASE}/employees/${id}` },
   reports:{ revenue:`${API_BASE}/reports/revenue`, ordersByStatus:`${API_BASE}/reports/orders-by-status`, topProducts:`${API_BASE}/reports/top-products` },
   settings:`${API_BASE}/settings`,
+  settingsDisplay:`${API_BASE}/settings/display`,
   ai: { generate:`${API_BASE}/ai/generate`, businessChat:`${API_BASE}/ai/business-chat`, businessChatHistory:`${API_BASE}/ai/business-chat/history` },
 } as const;

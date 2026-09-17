@@ -1,4 +1,15 @@
-export function formatCurrency(value: number, currency = 'USD', locale?: string) {
+let configuredCurrency = 'VND';
+
+export function configureCurrency(currency: string | null | undefined): void {
+  const normalized = currency?.trim().toUpperCase() ?? '';
+  configuredCurrency = /^[A-Z]{3}$/.test(normalized) ? normalized : 'VND';
+}
+
+export function getConfiguredCurrency(): string {
+  return configuredCurrency;
+}
+
+export function formatCurrency(value: number, currency = configuredCurrency, locale?: string) {
   return new Intl.NumberFormat(locale, { style: 'currency', currency }).format(value ?? 0);
 }
 

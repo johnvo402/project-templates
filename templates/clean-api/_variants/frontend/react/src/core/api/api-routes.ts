@@ -22,6 +22,7 @@ export const API_ROUTES = {
     topProducts: `${API_BASE}/reports/top-products`,
   },
   settings: `${API_BASE}/settings`,
+  settingsDisplay: `${API_BASE}/settings/display`,
   ai: {
     generate: `${API_BASE}/ai/generate`,
     businessChat: `${API_BASE}/ai/business-chat`,
