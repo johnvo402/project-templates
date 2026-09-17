@@ -1,3 +1,4 @@
+import { API_ROUTES } from '../../../core/api/api-routes';
 import type { ApiResponse, PaginationResponse } from '../../../core/api/api-types';
 import { customFetch } from '../../../core/api/custom-fetch';
 import { FILTER_ENABLED, buildListUrl, type ListQuery } from '../../../core/api/list-query';
@@ -19,18 +20,20 @@ export const ordersApi = {
     return result<PaginationResponse<Order>>(buildListUrl('orders', query));
   },
   detail(id: string) {
-    return result<OrderDetail>(`/api/orders/${id}`);
+    return result<OrderDetail>(API_ROUTES.orders.byId(id));
   },
   activeProducts() {
-    return result<PaginationResponse<ProductOption>>((FILTER_ENABLED ? buildListUrl('products', { page: 1, pageSize: 100, filters: [{ field: 'IsActive', operator: '$eq', value: true }] }) : '/api/products?page=1&pageSize=100&isActive=true'));
+    return result<PaginationResponse<ProductOption>>(FILTER_ENABLED
+      ? buildListUrl('products', { page: 1, pageSize: 100, filters: [{ field: 'IsActive', operator: '$eq', value: true }] })
+      : `${API_ROUTES.products.root}?page=1&pageSize=100&isActive=true`);
   },
   create(model: CreateOrderModel) {
-    return customFetch<unknown>('/api/orders', json('POST', model));
+    return customFetch<unknown>(API_ROUTES.orders.root, json('POST', model));
   },
   updateStatus(id: string, status: MutableOrderStatus) {
-    return customFetch<unknown>(`/api/orders/${id}/status`, json('PUT', { status }));
+    return customFetch<unknown>(`${API_ROUTES.orders.byId(id)}/status`, json('PUT', { status }));
   },
   cancel(id: string) {
-    return customFetch<unknown>(`/api/orders/${id}/cancel`, { method: 'POST' });
+    return customFetch<unknown>(`${API_ROUTES.orders.byId(id)}/cancel`, { method: 'POST' });
   },
 };

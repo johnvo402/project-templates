@@ -1,3 +1,4 @@
+import { API_ROUTES } from '../../../core/api/api-routes';
 import type { ApiResponse, PaginationResponse } from '../../../core/api/api-types';
 import { customFetch } from '../../../core/api/custom-fetch';
 import { buildListUrl, type ListQuery } from '../../../core/api/list-query';
@@ -19,12 +20,12 @@ export const employeesApi = {
     return result<PaginationResponse<Employee>>(buildListUrl('employees', query));
   },
   create(model: CreateEmployeeModel) {
-    return customFetch<unknown>('/api/employees', json('POST', model));
+    return customFetch<unknown>(API_ROUTES.employees.root, json('POST', model));
   },
   changeRole(id: string, role: EmployeeRole) {
-    return customFetch<unknown>(`/api/employees/${id}/role`, json('PUT', { role }));
+    return customFetch<unknown>(`${API_ROUTES.employees.byId(id)}/role`, json('PUT', { role }));
   },
   setStatus(id: string, isActive: boolean) {
-    return customFetch<unknown>(`/api/employees/${id}/status`, json('PUT', { isActive }));
+    return customFetch<unknown>(`${API_ROUTES.employees.byId(id)}/status`, json('PUT', { isActive }));
   },
 };

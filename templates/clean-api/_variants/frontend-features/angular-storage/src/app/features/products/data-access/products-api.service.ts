@@ -1,6 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { map } from 'rxjs';
+import { API_ROUTES } from '../../../core/api/api.routes';
 import { ApiResponse, PaginationResponse } from '../../../core/api/api.models';
 import { buildListUrl, type ListQuery } from '../../../core/api/list-query';
 import type { Product, ProductModel } from '../product.models';
@@ -14,15 +15,15 @@ export class ProductsApiService {
   }
 
   create(model: ProductModel, image: File | null = null) {
-    return this.http.post('/api/products', this.toFormData(model, image));
+    return this.http.post(API_ROUTES.products.root, this.toFormData(model, image));
   }
 
   update(id: string, model: ProductModel, image: File | null = null) {
-    return this.http.put<void>(`/api/products/${id}`, this.toFormData(model, image));
+    return this.http.put<void>(API_ROUTES.products.byId(id), this.toFormData(model, image));
   }
 
   remove(id: string) {
-    return this.http.delete<void>(`/api/products/${id}`);
+    return this.http.delete<void>(API_ROUTES.products.byId(id));
   }
 
   private toFormData(model: ProductModel, image: File | null) {

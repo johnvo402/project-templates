@@ -1,3 +1,4 @@
+import { API_ROUTES } from '../../../core/api/api-routes';
 import type { ApiResponse, PaginationResponse } from '../../../core/api/api-types';
 import { customFetch } from '../../../core/api/custom-fetch';
 import { buildListUrl, type ListQuery } from '../../../core/api/list-query';
@@ -19,12 +20,12 @@ export const productsApi = {
     return result<PaginationResponse<Product>>(buildListUrl('products', query));
   },
   create(model: ProductModel) {
-    return customFetch<unknown>('/api/products', json('POST', model));
+    return customFetch<unknown>(API_ROUTES.products.root, json('POST', model));
   },
   update(id: string, model: ProductModel) {
-    return customFetch<unknown>(`/api/products/${id}`, json('PUT', model));
+    return customFetch<unknown>(API_ROUTES.products.byId(id), json('PUT', model));
   },
   remove(id: string) {
-    return customFetch<unknown>(`/api/products/${id}`, { method: 'DELETE' });
+    return customFetch<unknown>(API_ROUTES.products.byId(id), { method: 'DELETE' });
   },
 };
