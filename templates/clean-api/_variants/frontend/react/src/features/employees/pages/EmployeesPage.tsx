@@ -9,7 +9,7 @@ import { AsyncState } from '../../../shared/components/AsyncState';
 import { PageHeader } from '../../../shared/components/PageHeader';
 import { useNotifications } from '../../../shared/feedback/NotificationProvider';
 import { getErrorMessage } from '../../../shared/utils/http-error';
-import { type BusinessListQuery, type ListFilter } from '../../business/business-query';
+import { type BusinessListQuery, type ListFilter } from '../../../shared/query/business-query';
 import { employeesApi } from '../api/employees.api';
 import { EmployeeFilters } from '../components/EmployeeFilters';
 import { EmployeeFormDialog } from '../components/EmployeeFormDialog';

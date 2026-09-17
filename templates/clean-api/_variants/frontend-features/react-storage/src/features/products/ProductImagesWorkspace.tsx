@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState, type ChangeEvent, type FormE
 import type { ApiResponse, PaginationResponse } from '../../core/api/api-types';
 import { customFetch } from '../../core/api/custom-fetch';
 import { can, type AuthUser } from '../../core/auth/auth-session';
-import { buildBusinessListUrl, FILTER_ENABLED, type BusinessListQuery } from '../business/business-query';
+import { buildBusinessListUrl, FILTER_ENABLED, type BusinessListQuery } from '../../shared/query/business-query';
 import { productImagesApi, type ProductImage } from './product-images.api';
 import './product-images.css';
 
