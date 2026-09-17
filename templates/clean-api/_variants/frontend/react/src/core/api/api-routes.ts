@@ -24,7 +24,6 @@ export const API_ROUTES = {
   settings: `${API_BASE}/settings`,
   settingsDisplay: `${API_BASE}/settings/display`,
   ai: {
-    generate: `${API_BASE}/ai/generate`,
     businessChat: `${API_BASE}/ai/business-chat`,
     businessChatHistory: `${API_BASE}/ai/business-chat/history`,
   },
