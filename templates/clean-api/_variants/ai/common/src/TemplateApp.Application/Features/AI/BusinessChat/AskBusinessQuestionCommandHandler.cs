@@ -1,20 +1,28 @@
 using Mediator;
 using TemplateApp.Application.Abstractions.AI;
+using TemplateApp.Application.Abstractions.Persistence;
 using TemplateApp.Application.Abstractions.Reporting;
 using TemplateApp.Application.Common.Results;
+using TemplateApp.Application.Features.AI.Common.Models;
 
 namespace TemplateApp.Application.Features.AI.BusinessChat;
 
 public sealed class AskBusinessQuestionCommandHandler(
     IAiService aiService,
-    IBusinessReportingService reportingService)
+    IBusinessReportingService reportingService,
+    IUnitOfWork? unitOfWork = null)
     : ICommandHandler<AskBusinessQuestionCommand, Result<AskBusinessQuestionResponse>>
 {
+    private const int MaxStoredMessages = 40;
+
     public async ValueTask<Result<AskBusinessQuestionResponse>> Handle(
         AskBusinessQuestionCommand command,
         CancellationToken cancellationToken)
     {
-        var assessment = BusinessQuestionPolicy.Assess(command.Model.Question, command.Model.History);
+        var history = await LoadHistoryAsync(command.UserId, command.Model.History, cancellationToken);
+        var model = command.Model with { History = history };
+
+        var assessment = BusinessQuestionPolicy.Assess(model.Question, model.History);
         if (assessment.IsFailure)
             return Result<AskBusinessQuestionResponse>.Failure(assessment.Error);
 
@@ -34,7 +42,7 @@ public sealed class AskBusinessQuestionCommandHandler(
             return Result<AskBusinessQuestionResponse>.Failure(BusinessChatErrors.BusinessDataUnavailable);
         }
 
-        var prompt = BusinessChatPromptBuilder.Build(command.Model, topic, dashboard);
+        var prompt = BusinessChatPromptBuilder.Build(model, topic, dashboard);
         string answer;
         try
         {
@@ -52,10 +60,84 @@ public sealed class AskBusinessQuestionCommandHandler(
         if (string.IsNullOrWhiteSpace(answer))
             return Result<AskBusinessQuestionResponse>.Failure(BusinessChatErrors.EmptyResponse);
 
+        var trimmedAnswer = answer.Trim();
+        await SaveHistoryAsync(command.UserId, history, model.Question.Trim(), trimmedAnswer, cancellationToken);
+
         return Result<AskBusinessQuestionResponse>.Success(new AskBusinessQuestionResponse(
-            answer.Trim(),
+            trimmedAnswer,
             topic.ToString(),
             GetSuggestions(topic)));
+    }
+
+    private async Task<IReadOnlyList<BusinessChatMessageModel>> LoadHistoryAsync(
+        Guid? userId,
+        IReadOnlyList<BusinessChatMessageModel>? fallback,
+        CancellationToken cancellationToken)
+    {
+//#if (redis)
+        if (userId is not null && unitOfWork is not null)
+        {
+            try
+            {
+                var cached = await unitOfWork
+                    .CacheRepository<BusinessChatHistoryState>()
+                    .GetAsync(GetHistoryKey(userId.Value), cancellationToken);
+
+                if (cached?.Messages is { Count: > 0 })
+                    return cached.Messages;
+            }
+            catch
+            {
+                // Chat stays available when Redis is temporarily unavailable.
+            }
+        }
+//#endif
+
+        return fallback ?? [];
+    }
+
+    private async Task SaveHistoryAsync(
+        Guid? userId,
+        IReadOnlyList<BusinessChatMessageModel> history,
+        string question,
+        string answer,
+        CancellationToken cancellationToken)
+    {
+//#if (redis)
+        if (userId is null || unitOfWork is null)
+            return;
+
+        try
+        {
+            var messages = history
+                .Append(new BusinessChatMessageModel("user", question))
+                .Append(new BusinessChatMessageModel("assistant", answer))
+                .TakeLast(MaxStoredMessages)
+                .ToArray();
+
+            await unitOfWork
+                .CacheRepository<BusinessChatHistoryState>()
+                .SetAsync(
+                    GetHistoryKey(userId.Value),
+                    new BusinessChatHistoryState(messages),
+                    GetTimeUntilNextUtcMidnight(),
+                    cancellationToken);
+        }
+        catch
+        {
+            // History persistence must not turn a successful AI answer into a failed request.
+        }
+//#endif
+    }
+
+    private static string GetHistoryKey(Guid userId)
+        => $"ai:business-chat:{userId:N}:{DateTime.UtcNow:yyyyMMdd}";
+
+    private static TimeSpan GetTimeUntilNextUtcMidnight()
+    {
+        var now = DateTimeOffset.UtcNow;
+        var nextMidnight = new DateTimeOffset(now.UtcDateTime.Date.AddDays(1), TimeSpan.Zero);
+        return nextMidnight - now;
     }
 
     private static IReadOnlyList<string> GetSuggestions(BusinessQuestionTopic topic)
@@ -92,4 +174,31 @@ public sealed class AskBusinessQuestionCommandHandler(
                 "Which products and order statuses stand out?"
             ]
         };
+}
+
+public sealed class GetBusinessChatHistoryQueryHandler(IUnitOfWork unitOfWork)
+    : IQueryHandler<GetBusinessChatHistoryQuery, Result<IReadOnlyList<BusinessChatMessageModel>>>
+{
+    public async ValueTask<Result<IReadOnlyList<BusinessChatMessageModel>>> Handle(
+        GetBusinessChatHistoryQuery query,
+        CancellationToken cancellationToken)
+    {
+//#if (redis)
+        try
+        {
+            var history = await unitOfWork
+                .CacheRepository<BusinessChatHistoryState>()
+                .GetAsync($"ai:business-chat:{query.UserId:N}:{DateTime.UtcNow:yyyyMMdd}", cancellationToken);
+
+            return Result<IReadOnlyList<BusinessChatMessageModel>>.Success(history?.Messages ?? []);
+        }
+        catch
+        {
+            return Result<IReadOnlyList<BusinessChatMessageModel>>.Success([]);
+        }
+//#else
+        await Task.CompletedTask;
+        return Result<IReadOnlyList<BusinessChatMessageModel>>.Success([]);
+//#endif
+    }
 }

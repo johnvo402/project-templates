@@ -1,5 +1,10 @@
-import { FormEvent, useState } from 'react';
-import { askBusinessQuestion, type BusinessChatMessage } from './ai.api';
+import { FormEvent, KeyboardEvent, useEffect, useRef, useState } from 'react';
+import {
+  askBusinessQuestion,
+  getBusinessChatHistory,
+  type BusinessChatMessage,
+} from './ai.api';
+import './ai.css';
 
 const DEFAULT_SUGGESTIONS = [
   'Summarize the current business situation.',
@@ -8,27 +13,78 @@ const DEFAULT_SUGGESTIONS = [
   'How many products are low on stock?',
 ];
 
+function AssistantAnswer({ content }: { content: string }) {
+  const lines = content.split('\n').map(line => line.trim()).filter(Boolean);
+
+  if (lines.length <= 1) return <p className="ai-answer-paragraph">{content}</p>;
+
+  return (
+    <div className="ai-answer">
+      {lines.map((line, index) => {
+        const bullet = line.match(/^[-*•]\s+(.*)$/);
+        if (bullet) {
+          return (
+            <div className="ai-answer-bullet" key={`${line}-${index}`}>
+              <span aria-hidden="true">•</span>
+              <span>{bullet[1]}</span>
+            </div>
+          );
+        }
+
+        if (line.length < 72 && line.endsWith(':')) {
+          return <strong className="ai-answer-heading" key={`${line}-${index}`}>{line}</strong>;
+        }
+
+        return <p className="ai-answer-paragraph" key={`${line}-${index}`}>{line}</p>;
+      })}
+    </div>
+  );
+}
+
 export function AiPanel() {
+  const [open, setOpen] = useState(false);
   const [question, setQuestion] = useState('');
   const [messages, setMessages] = useState<BusinessChatMessage[]>([]);
   const [suggestions, setSuggestions] = useState(DEFAULT_SUGGESTIONS);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [historyLoading, setHistoryLoading] = useState(true);
+  const endRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    let active = true;
+
+    void getBusinessChatHistory()
+      .then(history => {
+        if (active) setMessages(history);
+      })
+      .catch(() => {
+        // History is optional at runtime; a Redis outage should not hide the assistant.
+      })
+      .finally(() => {
+        if (active) setHistoryLoading(false);
+      });
+
+    return () => { active = false; };
+  }, []);
+
+  useEffect(() => {
+    if (open) endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+  }, [messages, loading, open]);
 
   async function ask(value: string) {
     const trimmed = value.trim();
     if (!trimmed || loading) return;
 
-    const history = messages.slice(-12);
     setMessages(current => [...current, { role: 'user', content: trimmed }]);
     setQuestion('');
     setError('');
     setLoading(true);
 
     try {
-      const response = await askBusinessQuestion(trimmed, history);
+      const response = await askBusinessQuestion(trimmed);
       setMessages(current => [...current, { role: 'assistant', content: response.answer }]);
-      setSuggestions(response.suggestedQuestions);
+      setSuggestions(response.suggestedQuestions.length > 0 ? response.suggestedQuestions : DEFAULT_SUGGESTIONS);
     } catch (value) {
       setError(value instanceof Error ? value.message : 'Business AI request failed.');
     } finally {
@@ -41,67 +97,107 @@ export function AiPanel() {
     await ask(question);
   }
 
+  function handleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
+    if (event.key === 'Enter' && !event.shiftKey) {
+      event.preventDefault();
+      void ask(question);
+    }
+  }
+
   return (
-    <section className="card">
-      <div className="section-heading">
-        <div>
-          <p className="eyebrow">Assistant</p>
-          <h2>Business AI chat</h2>
-        </div>
-        <span className="pill">Read-only business data</span>
-      </div>
-
-      <p>
-        Ask about revenue, orders, top products, inventory risk, recent activity, or practical operating suggestions.
-        Questions that need unavailable metrics or fall outside the business scope are rejected by the application layer.
-      </p>
-
-      {messages.length > 0 && (
-        <div className="stack">
-          {messages.map((message, index) => (
-            <div className="surface" key={`${message.role}-${index}`}>
-              <strong>{message.role === 'user' ? 'You' : 'Business AI'}</strong>
-              {message.role === 'assistant'
-                ? <pre className="ai-output">{message.content}</pre>
-                : <p>{message.content}</p>}
+    <div className="ai-chat-root">
+      {open && (
+        <section className="ai-chat-panel" aria-label="Business AI assistant">
+          <header className="ai-chat-header">
+            <div className="ai-chat-brand">
+              <span className="ai-chat-avatar" aria-hidden="true">✦</span>
+              <div>
+                <strong>Business AI</strong>
+                <span>Read-only assistant</span>
+              </div>
             </div>
-          ))}
-        </div>
+            <button className="ai-chat-icon-button" type="button" aria-label="Close AI chat" onClick={() => setOpen(false)}>
+              ×
+            </button>
+          </header>
+
+          <div className="ai-chat-body">
+            {historyLoading && messages.length === 0 && (
+              <div className="ai-chat-status">Loading today&apos;s conversation…</div>
+            )}
+
+            {!historyLoading && messages.length === 0 && (
+              <div className="ai-chat-welcome">
+                <span className="ai-chat-welcome-icon" aria-hidden="true">✦</span>
+                <strong>What do you want to know?</strong>
+                <p>Ask about revenue, orders, products, inventory, recent activity, or practical operating signals.</p>
+              </div>
+            )}
+
+            {messages.map((message, index) => (
+              <div
+                className={`ai-message-row ${message.role === 'user' ? 'is-user' : 'is-assistant'}`}
+                key={`${message.role}-${index}`}
+              >
+                <div className="ai-message-bubble">
+                  {message.role === 'assistant'
+                    ? <AssistantAnswer content={message.content} />
+                    : <p>{message.content}</p>}
+                </div>
+              </div>
+            ))}
+
+            {loading && (
+              <div className="ai-message-row is-assistant">
+                <div className="ai-message-bubble ai-typing" aria-label="AI is thinking">
+                  <span />
+                  <span />
+                  <span />
+                </div>
+              </div>
+            )}
+
+            <div ref={endRef} />
+          </div>
+
+          <div className="ai-chat-suggestions">
+            {suggestions.slice(0, 3).map(suggestion => (
+              <button key={suggestion} type="button" disabled={loading} onClick={() => void ask(suggestion)}>
+                {suggestion}
+              </button>
+            ))}
+          </div>
+
+          {error && <p className="ai-chat-error">{error}</p>}
+
+          <form className="ai-chat-composer" onSubmit={submit}>
+            <textarea
+              rows={1}
+              maxLength={1000}
+              value={question}
+              placeholder="Ask about your business…"
+              aria-label="Ask Business AI"
+              onKeyDown={handleKeyDown}
+              onChange={event => setQuestion(event.target.value)}
+            />
+            <button className="ai-chat-send" type="submit" disabled={loading || !question.trim()} aria-label="Send message">
+              ↑
+            </button>
+          </form>
+
+          <div className="ai-chat-footnote">History resets automatically at 00:00 UTC.</div>
+        </section>
       )}
 
-      <div className="stack">
-        <p className="eyebrow">Try asking</p>
-        <div>
-          {suggestions.map(suggestion => (
-            <button
-              key={suggestion}
-              type="button"
-              disabled={loading}
-              onClick={() => void ask(suggestion)}
-            >
-              {suggestion}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <form className="stack" onSubmit={submit}>
-        <label>
-          Question
-          <textarea
-            rows={4}
-            maxLength={1000}
-            value={question}
-            placeholder="Example: Doanh thu và đơn hàng hiện tại có điểm gì cần chú ý?"
-            onChange={event => setQuestion(event.target.value)}
-          />
-        </label>
-        <button className="primary" disabled={loading || !question.trim()}>
-          {loading ? 'Thinking…' : 'Ask business AI'}
-        </button>
-      </form>
-
-      {error && <p className="error surface-error">{error}</p>}
-    </section>
+      <button
+        className={`ai-chat-launcher ${open ? 'is-open' : ''}`}
+        type="button"
+        aria-label={open ? 'Close AI chat' : 'Open AI chat'}
+        aria-expanded={open}
+        onClick={() => setOpen(value => !value)}
+      >
+        {open ? '×' : '✦'}
+      </button>
+    </div>
   );
 }

@@ -25,5 +25,6 @@ export const API_ROUTES = {
   ai: {
     generate: `${API_BASE}/ai/generate`,
     businessChat: `${API_BASE}/ai/business-chat`,
+    businessChatHistory: `${API_BASE}/ai/business-chat/history`,
   },
 } as const;

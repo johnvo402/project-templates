@@ -15,9 +15,6 @@ export const APP_NAVIGATION: readonly AppNavigationItem[] = [
   { label: 'Reports', path: '/reports', group: 'Analytics', permission: 'reports.view' },
   { label: 'Settings', path: '/settings', group: 'System', permission: 'settings.view' },
   { label: 'Profile', path: '/profile', group: 'Account' },
-//#if (ai != "none")
-  { label: 'AI Assistant', path: '/ai', group: 'Account', permission: 'ai.generate' },
-//#endif
 ];
 
 export function visibleNavigation(user: AuthUser): AppNavigationItem[] {

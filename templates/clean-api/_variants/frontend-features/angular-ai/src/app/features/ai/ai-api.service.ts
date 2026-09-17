@@ -19,8 +19,17 @@ export type BusinessChatResponse = {
 export class AiApiService {
   private readonly http = inject(HttpClient);
 
-  askBusinessQuestion(question: string, history: BusinessChatMessage[]): Observable<BusinessChatResponse> {
-    return this.http.post<ApiResponse<BusinessChatResponse>>(API_ROUTES.ai.businessChat, { question, history }).pipe(
+  getBusinessChatHistory(): Observable<BusinessChatMessage[]> {
+    return this.http.get<ApiResponse<BusinessChatMessage[]>>(API_ROUTES.ai.businessChatHistory).pipe(
+      map(response => response.results),
+      catchError(error => throwError(() => new Error(
+        error?.error?.title ?? error?.error?.detail ?? 'Unable to load AI chat history.',
+      ))),
+    );
+  }
+
+  askBusinessQuestion(question: string): Observable<BusinessChatResponse> {
+    return this.http.post<ApiResponse<BusinessChatResponse>>(API_ROUTES.ai.businessChat, { question }).pipe(
       map(response => response.results),
       catchError(error => throwError(() => new Error(
         error?.error?.title ?? error?.error?.detail ?? 'Business AI request failed.',

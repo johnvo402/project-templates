@@ -9,7 +9,6 @@ export const appRoutes: Routes = [
   { path: 'reports', title: 'Reports', loadComponent: () => import('./features/reports/pages/reports.page').then(module => module.ReportsPage), canActivate: [permissionGuard], data: { permission: 'reports.view' } },
   { path: 'settings', title: 'Settings', loadComponent: () => import('./features/settings/pages/settings.page').then(module => module.SettingsPage), canActivate: [permissionGuard], data: { permission: 'settings.view' } },
   { path: 'profile', title: 'Profile', loadComponent: () => import('./features/profile/profile.page').then(module => module.ProfilePage) },
-  { path: 'ai', title: 'AI', loadComponent: () => import('./features/ai/ai.page').then(module => module.AiPage), canActivate: [permissionGuard], data: { permission: 'ai.generate' } },
   { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
   { path: '**', redirectTo: 'profile' },
 ];
