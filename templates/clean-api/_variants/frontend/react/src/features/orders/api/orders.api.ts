@@ -1,7 +1,7 @@
 import type { ApiResponse, PaginationResponse } from '../../../core/api/api-types';
 import { customFetch } from '../../../core/api/custom-fetch';
 import { buildActiveProductsUrl, buildBusinessListUrl, type BusinessListQuery } from '../../../shared/query/business-query';
-import type { CreateOrderModel, MutableOrderStatus, Order, ProductOption } from '../order.models';
+import type { CreateOrderModel, MutableOrderStatus, Order, OrderDetail, ProductOption } from '../order.models';
 
 async function result<T>(path: string, options?: RequestInit): Promise<T> {
   const response = await customFetch<ApiResponse<T>>(path, options);
@@ -17,6 +17,9 @@ const json = (method: string, body: unknown): RequestInit => ({
 export const ordersApi = {
   list(query: BusinessListQuery) {
     return result<PaginationResponse<Order>>(buildBusinessListUrl('orders', query));
+  },
+  detail(id: string) {
+    return result<OrderDetail>(`/api/orders/${id}`);
   },
   activeProducts() {
     return result<PaginationResponse<ProductOption>>(buildActiveProductsUrl());
