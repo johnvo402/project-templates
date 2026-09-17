@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { map } from 'rxjs';
 import { ApiResponse, PaginationResponse } from '../../../core/api/api.models';
-import { buildBusinessListUrl, type BusinessListQuery } from '../../business/business-query';
+import { buildBusinessListUrl, type BusinessListQuery } from '../../../shared/query/business-query';
 import type { Product, ProductModel } from '../product.models';
 
 @Injectable({ providedIn: 'root' })
