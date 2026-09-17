@@ -11,14 +11,20 @@
     "api:generate:watch": "orval --config orval.config.ts --watch"
   },
   "dependencies": {
-    "@tanstack/react-query": "^5.102.8",
-    "react": "^19.1.1",
-    "react-dom": "^19.1.1"
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
+    "@mui/icons-material": "^9.4.0",
+    "@mui/material": "^9.4.0",
+    "@mui/x-data-grid": "^9.13.0",
+    "@tanstack/react-query": "^5.103.0",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "react-router": "^8.4.0"
   },
   "devDependencies": {
     "@types/node": "^24.3.0",
-    "@types/react": "^19.1.10",
-    "@types/react-dom": "^19.1.7",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^5.0.2",
     "orval": "^8.33.0",
     "typescript": "^5.9.2",
