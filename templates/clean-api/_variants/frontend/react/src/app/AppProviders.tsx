@@ -3,6 +3,7 @@ import { ThemeProvider } from '@mui/material/styles';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useState, type PropsWithChildren } from 'react';
 import { BrowserRouter } from 'react-router';
+import { NotificationProvider } from '../shared/feedback/NotificationProvider';
 import { appTheme } from './theme';
 
 export function AppProviders({ children }: PropsWithChildren) {
@@ -20,7 +21,9 @@ export function AppProviders({ children }: PropsWithChildren) {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider theme={appTheme} defaultMode="system">
         <CssBaseline />
-        <BrowserRouter>{children}</BrowserRouter>
+        <BrowserRouter>
+          <NotificationProvider>{children}</NotificationProvider>
+        </BrowserRouter>
       </ThemeProvider>
     </QueryClientProvider>
   );
