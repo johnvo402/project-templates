@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { Navigate, Route, Routes } from 'react-router';
 import type { AuthUser } from '../core/auth/auth-session';
 import { BusinessWorkspace } from '../features/business/BusinessWorkspace';
+import { ProductsPage } from '../features/products/pages/ProductsPage';
 import { AppShell } from '../shared/components/AppShell';
 import { getDefaultPath, getVisibleNavigation } from './app-navigation';
 
@@ -30,6 +31,10 @@ export function AuthenticatedApp({
     <AppShell user={user} navigation={navigation} onLogout={onLogout}>
       <Routes>
         <Route path="/" element={<Navigate to={fallbackPath} replace />} />
+
+        {navigation.some(item => item.path === '/products') && (
+          <Route path="/products" element={<ProductsPage user={user} />} />
+        )}
 
         {navigation
           .filter(item => item.section)

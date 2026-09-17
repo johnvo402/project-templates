@@ -31,7 +31,7 @@ export type NavigationOptions = {
 export const appNavigation: readonly AppNavigationItem[] = [
   { label: 'Dashboard', path: '/dashboard', group: 'Overview', permission: 'dashboard.view', section: 'dashboard', icon: <DashboardOutlinedIcon /> },
   { label: 'Orders', path: '/orders', group: 'Sales', permission: 'orders.view', section: 'orders', icon: <ReceiptLongOutlinedIcon /> },
-  { label: 'Products', path: '/products', group: 'Sales', permission: 'products.view', section: 'products', icon: <Inventory2OutlinedIcon /> },
+  { label: 'Products', path: '/products', group: 'Sales', permission: 'products.view', icon: <Inventory2OutlinedIcon /> },
   { label: 'Product Images', path: '/products/images', group: 'Sales', permission: 'products.view', optionalFeature: 'product-images', icon: <ImageOutlinedIcon /> },
   { label: 'Employees', path: '/employees', group: 'Management', permission: 'employees.view', section: 'employees', icon: <GroupsOutlinedIcon /> },
   { label: 'Reports', path: '/reports', group: 'Analytics', permission: 'reports.view', section: 'reports', icon: <BarChartOutlinedIcon /> },
@@ -50,5 +50,5 @@ export function getVisibleNavigation(user: AuthUser, options: NavigationOptions)
 }
 
 export function getDefaultPath(items: readonly AppNavigationItem[]): string {
-  return items.find(item => item.section)?.path ?? '/profile';
+  return items.find(item => item.path === '/dashboard')?.path ?? items[0]?.path ?? '/profile';
 }
