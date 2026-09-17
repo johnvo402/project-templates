@@ -20,7 +20,7 @@ export function OrderDetailDialog({ open, order, loading, error, onClose }: Prop
         {order && (
           <Stack spacing={2}>
             <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' }, gap: 1.5 }}>
-              <Box><Typography variant="caption" color="text.secondary">Order</Typography><Typography fontWeight={700}>{order.orderNumber}</Typography></Box>
+              <Box><Typography variant="caption" color="text.secondary">Order</Typography><Typography sx={{ fontWeight: 700 }}>{order.orderNumber}</Typography></Box>
               <Box><Typography variant="caption" color="text.secondary">Status</Typography><Box><Chip size="small" label={order.status} /></Box></Box>
               <Box><Typography variant="caption" color="text.secondary">Customer</Typography><Typography>{order.customerName}</Typography></Box>
               <Box><Typography variant="caption" color="text.secondary">Phone</Typography><Typography>{order.customerPhone || '—'}</Typography></Box>
@@ -31,8 +31,8 @@ export function OrderDetailDialog({ open, order, loading, error, onClose }: Prop
             <Stack spacing={1}>
               {order.items.map(item => (
                 <Box key={item.productId} sx={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto', gap: 2, alignItems: 'center' }}>
-                  <Box><Typography fontWeight={600}>{item.productName}</Typography><Typography variant="body2" color="text.secondary">{item.quantity} × {formatCurrency(item.unitPrice)}</Typography></Box>
-                  <Typography fontWeight={700}>{formatCurrency(item.total)}</Typography>
+                  <Box><Typography sx={{ fontWeight: 600 }}>{item.productName}</Typography><Typography variant="body2" color="text.secondary">{item.quantity} × {formatCurrency(item.unitPrice)}</Typography></Box>
+                  <Typography sx={{ fontWeight: 700 }}>{formatCurrency(item.total)}</Typography>
                 </Box>
               ))}
             </Stack>
