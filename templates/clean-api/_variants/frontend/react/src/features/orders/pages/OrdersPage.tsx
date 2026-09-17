@@ -12,6 +12,7 @@ import { useNotifications } from '../../../shared/feedback/NotificationProvider'
 import { type BusinessListQuery, type ListFilter } from '../../../shared/query/business-query';
 import { getErrorMessage } from '../../../shared/utils/http-error';
 import { ordersApi } from '../api/orders.api';
+import { OrderDetailDialog } from '../components/OrderDetailDialog';
 import { OrderFilters } from '../components/OrderFilters';
 import { OrderFormDialog } from '../components/OrderFormDialog';
 import { OrdersGrid } from '../components/OrdersGrid';
@@ -30,8 +31,10 @@ export function OrdersPage({ user }: Props) {
   const [filters, setFilters] = useState<OrderFilterState>(initialFilters);
   const [formOpen, setFormOpen] = useState(false);
   const [cancelTarget, setCancelTarget] = useState<Order | null>(null);
+  const [detailId, setDetailId] = useState<string | null>(null);
 
   const orders = useQuery({ queryKey: ['orders', query], queryFn: () => ordersApi.list(query) });
+  const detail = useQuery({ queryKey: ['orders', 'detail', detailId], queryFn: () => ordersApi.detail(detailId!), enabled: Boolean(detailId) });
   const activeProducts = useQuery({
     queryKey: ['orders', 'active-products'],
     queryFn: ordersApi.activeProducts,
@@ -78,20 +81,10 @@ export function OrdersPage({ user }: Props) {
     const lhs: ListFilter[] = [];
     if (filters.status) lhs.push({ field: 'Status', operator: '$eqi', value: filters.status });
     if (filters.minTotal.trim()) lhs.push({ field: 'TotalAmount', operator: '$gte', value: Math.max(0, Number(filters.minTotal)) });
-    setQuery(current => ({
-      ...current,
-      page: 1,
-      keyword: filters.keyword.trim() || undefined,
-      targets: ['OrderNumber', 'CustomerName', 'CustomerPhone'],
-      sort: filters.sort || undefined,
-      filters: lhs,
-    }));
+    setQuery(current => ({ ...current, page: 1, keyword: filters.keyword.trim() || undefined, targets: ['OrderNumber', 'CustomerName', 'CustomerPhone'], sort: filters.sort || undefined, filters: lhs }));
   };
 
-  const clearFilters = () => {
-    setFilters(initialFilters);
-    setQuery(current => ({ page: 1, pageSize: current.pageSize }));
-  };
+  const clearFilters = () => { setFilters(initialFilters); setQuery(current => ({ page: 1, pageSize: current.pageSize })); };
 
   const page = orders.data;
   const currentPage = page?.paging?.currentPage ?? query.page;
@@ -100,73 +93,13 @@ export function OrdersPage({ user }: Props) {
 
   return (
     <Box component="section">
-      <PageHeader
-        eyebrow="Sales"
-        title="Orders"
-        description="Create orders and move them through fulfillment."
-        actions={(
-          <>
-            <Button variant="outlined" startIcon={<RefreshOutlinedIcon />} onClick={() => void orders.refetch()} disabled={orders.isFetching}>Refresh</Button>
-            {can(user, 'orders.create') && <Button variant="contained" startIcon={<AddOutlinedIcon />} onClick={() => setFormOpen(true)}>New order</Button>}
-          </>
-        )}
-      />
-
+      <PageHeader eyebrow="Sales" title="Orders" description="Create orders and move them through fulfillment." actions={<><Button variant="outlined" startIcon={<RefreshOutlinedIcon />} onClick={() => void orders.refetch()} disabled={orders.isFetching}>Refresh</Button>{can(user, 'orders.create') && <Button variant="contained" startIcon={<AddOutlinedIcon />} onClick={() => setFormOpen(true)}>New order</Button>}</>} />
       <OrderFilters value={filters} onChange={setFilters} onApply={applyFilters} onClear={clearFilters} />
-
-      <AsyncState
-        loading={orders.isLoading}
-        error={orders.isError ? getErrorMessage(orders.error) : null}
-        empty={!orders.isLoading && !orders.isError && (page?.data.length ?? 0) === 0}
-        emptyTitle="No orders yet"
-        emptyMessage="Create the first order or adjust the current filters."
-        onRetry={() => void orders.refetch()}
-      />
-
-      {page && page.data.length > 0 && (
-        <>
-          <OrdersGrid
-            orders={page.data}
-            loading={orders.isFetching}
-            busy={busy}
-            canUpdate={can(user, 'orders.update-status')}
-            canCancel={can(user, 'orders.cancel')}
-            onUpdateStatus={(order, status) => updateStatus.mutate({ order, status })}
-            onCancel={setCancelTarget}
-          />
-          {page.paging && (
-            <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, alignItems: { sm: 'center' }, justifyContent: 'space-between', gap: 2, mt: 2 }}>
-              <Typography variant="body2" color="text.secondary">{totalPages ? `Page ${currentPage} of ${totalPages}` : 'No results'}</Typography>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
-                <TextField select size="small" label="Rows" value={query.pageSize} onChange={event => setQuery(current => ({ ...current, page: 1, pageSize: Number(event.target.value) }))} sx={{ width: 100 }}>
-                  {pageSizes.map(size => <MenuItem key={size} value={size}>{size}</MenuItem>)}
-                </TextField>
-                <Pagination count={Math.max(1, totalPages)} page={Math.max(1, currentPage)} onChange={(_, nextPage) => setQuery(current => ({ ...current, page: nextPage }))} disabled={totalPages <= 1} />
-              </Box>
-            </Box>
-          )}
-        </>
-      )}
-
-      <OrderFormDialog
-        open={formOpen}
-        products={activeProducts.data?.data ?? []}
-        productsLoading={activeProducts.isLoading || activeProducts.isFetching}
-        productsError={activeProducts.isError ? getErrorMessage(activeProducts.error) : null}
-        busy={createOrder.isPending}
-        onClose={() => setFormOpen(false)}
-        onSubmit={model => createOrder.mutate(model)}
-      />
-      <ConfirmDialog
-        open={Boolean(cancelTarget)}
-        title="Cancel order?"
-        description={cancelTarget ? `Cancel ${cancelTarget.orderNumber}? Reserved stock will be restored.` : ''}
-        confirmLabel="Cancel order"
-        destructive
-        busy={cancelOrder.isPending}
-        onClose={() => setCancelTarget(null)}
-        onConfirm={() => { if (cancelTarget) cancelOrder.mutate(cancelTarget); }}
-      />
+      <AsyncState loading={orders.isLoading} error={orders.isError ? getErrorMessage(orders.error) : null} empty={!orders.isLoading && !orders.isError && (page?.data.length ?? 0) === 0} emptyTitle="No orders yet" emptyMessage="Create the first order or adjust the current filters." onRetry={() => void orders.refetch()} />
+      {page && page.data.length > 0 && <><OrdersGrid orders={page.data} loading={orders.isFetching} busy={busy} canUpdate={can(user, 'orders.update-status')} canCancel={can(user, 'orders.cancel')} onView={order => setDetailId(order.id)} onUpdateStatus={(order, status) => updateStatus.mutate({ order, status })} onCancel={setCancelTarget} />{page.paging && <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, alignItems: { sm: 'center' }, justifyContent: 'space-between', gap: 2, mt: 2 }}><Typography variant="body2" color="text.secondary">{totalPages ? `Page ${currentPage} of ${totalPages}` : 'No results'}</Typography><Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}><TextField select size="small" label="Rows" value={query.pageSize} onChange={event => setQuery(current => ({ ...current, page: 1, pageSize: Number(event.target.value) }))} sx={{ width: 100 }}>{pageSizes.map(size => <MenuItem key={size} value={size}>{size}</MenuItem>)}</TextField><Pagination count={Math.max(1, totalPages)} page={Math.max(1, currentPage)} onChange={(_, nextPage) => setQuery(current => ({ ...current, page: nextPage }))} disabled={totalPages <= 1} /></Box></Box>}</>}
+      <OrderFormDialog open={formOpen} products={activeProducts.data?.data ?? []} productsLoading={activeProducts.isLoading || activeProducts.isFetching} productsError={activeProducts.isError ? getErrorMessage(activeProducts.error) : null} busy={createOrder.isPending} onClose={() => setFormOpen(false)} onSubmit={model => createOrder.mutate(model)} />
+      <OrderDetailDialog open={Boolean(detailId)} order={detail.data} loading={detail.isLoading || detail.isFetching} error={detail.isError ? getErrorMessage(detail.error) : null} onClose={() => setDetailId(null)} />
+      <ConfirmDialog open={Boolean(cancelTarget)} title="Cancel order?" description={cancelTarget ? `Cancel ${cancelTarget.orderNumber}? Reserved stock will be restored.` : ''} confirmLabel="Cancel order" destructive busy={cancelOrder.isPending} onClose={() => setCancelTarget(null)} onConfirm={() => { if (cancelTarget) cancelOrder.mutate(cancelTarget); }} />
     </Box>
   );
 }

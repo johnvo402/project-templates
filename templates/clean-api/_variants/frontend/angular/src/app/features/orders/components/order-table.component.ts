@@ -17,10 +17,10 @@ import type { MutableOrderStatus, Order, OrderStatus } from '../order.models';
       <ng-container matColumnDef="order"><th mat-header-cell *matHeaderCellDef>Order</th><td mat-cell *matCellDef="let order">{{order.orderNumber}}</td></ng-container>
       <ng-container matColumnDef="customer"><th mat-header-cell *matHeaderCellDef>Customer</th><td mat-cell *matCellDef="let order">{{order.customerName}}</td></ng-container>
       <ng-container matColumnDef="status"><th mat-header-cell *matHeaderCellDef>Status</th><td mat-cell *matCellDef="let order"><span [class]="statusClass(order.status)">{{order.status}}</span></td></ng-container>
-      <ng-container matColumnDef="items"><th mat-header-cell *matHeaderCellDef>Items</th><td mat-cell *matCellDef="let order">{{order.items.length}}</td></ng-container>
+      <ng-container matColumnDef="items"><th mat-header-cell *matHeaderCellDef>Items</th><td mat-cell *matCellDef="let order">{{order.itemCount}}</td></ng-container>
       <ng-container matColumnDef="total"><th mat-header-cell *matHeaderCellDef>Total</th><td mat-cell *matCellDef="let order">{{money(order.totalAmount)}}</td></ng-container>
       <ng-container matColumnDef="created"><th mat-header-cell *matHeaderCellDef>Created</th><td mat-cell *matCellDef="let order">{{date(order.createdAt)}}</td></ng-container>
-      <ng-container matColumnDef="actions"><th mat-header-cell *matHeaderCellDef>Actions</th><td mat-cell *matCellDef="let order"><div class="actions">@if(canUpdate()&&order.status==='Pending'){<button mat-button [disabled]="busy()" (click)="changeStatus.emit({order,status:'Processing'})">Process</button>}@if(canUpdate()&&(order.status==='Pending'||order.status==='Processing')){<button mat-button [disabled]="busy()" (click)="changeStatus.emit({order,status:'Completed'})">Complete</button>}@if(canCancel()&&order.status!=='Completed'&&order.status!=='Cancelled'){<button mat-button color="warn" [disabled]="busy()" (click)="cancel.emit(order)">Cancel</button>}</div></td></ng-container>
+      <ng-container matColumnDef="actions"><th mat-header-cell *matHeaderCellDef>Actions</th><td mat-cell *matCellDef="let order"><div class="actions"><button mat-button (click)="view.emit(order)">View</button>@if(canUpdate()&&order.status==='Pending'){<button mat-button [disabled]="busy()" (click)="changeStatus.emit({order,status:'Processing'})">Process</button>}@if(canUpdate()&&order.status==='Processing'){<button mat-button [disabled]="busy()" (click)="changeStatus.emit({order,status:'Completed'})">Complete</button>}@if(canCancel()&&order.status!=='Completed'&&order.status!=='Cancelled'){<button mat-button color="warn" [disabled]="busy()" (click)="cancel.emit(order)">Cancel</button>}</div></td></ng-container>
       <tr mat-header-row *matHeaderRowDef="columns"></tr><tr mat-row *matRowDef="let row; columns: columns"></tr>
     </table>
   `,
@@ -30,6 +30,7 @@ export class OrderTableComponent {
   readonly canUpdate = input(false);
   readonly canCancel = input(false);
   readonly busy = input(false);
+  readonly view = output<Order>();
   readonly changeStatus = output<{ order: Order; status: MutableOrderStatus }>();
   readonly cancel = output<Order>();
   readonly columns = ['order', 'customer', 'status', 'items', 'total', 'created', 'actions'];

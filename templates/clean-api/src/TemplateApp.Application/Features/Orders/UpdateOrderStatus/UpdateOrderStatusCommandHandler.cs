@@ -12,6 +12,15 @@ public sealed class UpdateOrderStatusCommandHandler(IUnitOfWork unitOfWork)
 {
     public async ValueTask<Result> Handle(UpdateOrderStatusCommand request, CancellationToken cancellationToken)
     {
+        if (!Enum.TryParse<OrderStatus>(request.Status, ignoreCase: true, out var status) ||
+            status is not (OrderStatus.Processing or OrderStatus.Completed))
+        {
+            return Result.Failure(new Error(
+                "orders.invalid-status",
+                "Status must be Processing or Completed. Use the cancel order endpoint to cancel an order.",
+                ErrorType.Validation));
+        }
+
         var order = await unitOfWork.Repository<Order>().FirstOrDefaultAsync(
             new OrderByIdSpecification(new OrderId(request.Id)),
             cancellationToken);
@@ -21,7 +30,7 @@ public sealed class UpdateOrderStatusCommandHandler(IUnitOfWork unitOfWork)
 
         try
         {
-            order.ChangeStatus(request.Status);
+            order.ChangeStatus(status);
             await unitOfWork.SaveAsync(cancellationToken);
             return Result.Success();
         }

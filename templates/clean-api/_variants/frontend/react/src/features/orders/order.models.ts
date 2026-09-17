@@ -15,8 +15,20 @@ export type Order = {
   customerName: string;
   status: OrderStatus;
   totalAmount: number;
-  items: OrderItem[];
+  itemCount: number;
   createdAt: string;
+};
+
+export type OrderDetail = {
+  id: string;
+  orderNumber: string;
+  customerName: string;
+  customerPhone: string | null;
+  status: OrderStatus;
+  totalAmount: number;
+  createdAt: string;
+  updatedAt: string;
+  items: OrderItem[];
 };
 
 export type OrderItemModel = { productId: string; quantity: number };
