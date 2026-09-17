@@ -51,15 +51,21 @@ app.MapGet("/health", () => Results.Ok(new { status = "ok" }))
 
 app.MapAuthEndpoints();
 app.MapProfileEndpoints();
+//#if (minio)
 app.MapOptionalProfileAvatarEndpoints();
+//#endif
 app.MapDashboardEndpoints();
 app.MapProductEndpoints();
+//#if (minio)
 app.MapOptionalProductImageEndpoints();
+//#endif
 app.MapOrderEndpoints();
 app.MapEmployeeEndpoints();
 app.MapReportEndpoints();
 app.MapSettingsEndpoints();
+//#if (ai != "none")
 app.MapOptionalAiEndpoints();
+//#endif
 
 app.Run();
 
