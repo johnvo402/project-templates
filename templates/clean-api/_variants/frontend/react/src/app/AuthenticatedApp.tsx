@@ -1,4 +1,6 @@
+//#if (minio || (ai != "none"))
 import type { ReactNode } from 'react';
+//#endif
 import { Navigate, Route, Routes } from 'react-router';
 import type { AuthUser } from '../core/auth/auth-session';
 import { DashboardPage } from '../features/dashboard/pages/DashboardPage';
@@ -15,15 +17,26 @@ type Props = {
   user: AuthUser;
   onLogout: () => void;
   onProfileUpdated: (displayName: string) => void;
+//#if (ai != "none")
   aiPage?: ReactNode;
+//#endif
+//#if (minio)
   productImagesPage?: ReactNode;
+//#endif
 };
 
-export function AuthenticatedApp({ user, onLogout, onProfileUpdated, aiPage, productImagesPage }: Props) {
-  const navigation = getVisibleNavigation(user, {
-    ai: Boolean(aiPage),
-    productImages: Boolean(productImagesPage),
-  });
+export function AuthenticatedApp({
+  user,
+  onLogout,
+  onProfileUpdated,
+//#if (ai != "none")
+  aiPage,
+//#endif
+//#if (minio)
+  productImagesPage,
+//#endif
+}: Props) {
+  const navigation = getVisibleNavigation(user);
   const hasRoute = (path: string) => navigation.some(item => item.path === path);
   const fallbackPath = getDefaultPath(navigation);
 
@@ -37,9 +50,13 @@ export function AuthenticatedApp({ user, onLogout, onProfileUpdated, aiPage, pro
         {hasRoute('/employees') && <Route path="/employees" element={<EmployeesPage user={user} />} />}
         {hasRoute('/reports') && <Route path="/reports" element={<ReportsPage />} />}
         {hasRoute('/settings') && <Route path="/settings" element={<SettingsPage user={user} />} />}
-        {hasRoute('/profile') && <Route path="/profile" element={<ProfilePage user={user} onProfileUpdated={onProfileUpdated} />} />}
+        {hasRoute('/profile') && <Route path="/profile" element={<ProfilePage user={user} onProfileUpdated={onProfileUpdated} />} />
+//#if (minio)
         {productImagesPage && hasRoute('/products/images') && <Route path="/products/images" element={productImagesPage} />}
+//#endif
+//#if (ai != "none")
         {aiPage && hasRoute('/ai') && <Route path="/ai" element={aiPage} />}
+//#endif
         <Route path="*" element={<Navigate to={fallbackPath} replace />} />
       </Routes>
     </AppShell>

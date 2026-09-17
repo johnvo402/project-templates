@@ -82,8 +82,6 @@ import { groupNavigation, visibleNavigation } from '../navigation/app-navigation
 })
 export class AppShellComponent {
   readonly user = input.required<AuthUser>();
-  readonly showProductImages = input(false);
-  readonly showAi = input(false);
   readonly logout = output<void>();
 
   private readonly breakpoints = inject(BreakpointObserver);
@@ -100,8 +98,5 @@ export class AppShellComponent {
     .map(part => part[0]?.toUpperCase())
     .join('') || 'U');
 
-  readonly groups = computed(() => groupNavigation(visibleNavigation(this.user(), {
-    productImages: this.showProductImages(),
-    ai: this.showAi(),
-  })));
+  readonly groups = computed(() => groupNavigation(visibleNavigation(this.user())));
 }

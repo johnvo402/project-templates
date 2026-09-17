@@ -1,6 +1,6 @@
 import { Box, Button, MenuItem, Paper, TextField, Typography } from '@mui/material';
 import type { FormEvent } from 'react';
-import { FILTER_ENABLED } from '../../business/business-query';
+import { FILTER_ENABLED } from '../../../shared/query/business-query';
 import type { OrderFilterState } from '../order.models';
 
 type Props = {
