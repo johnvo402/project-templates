@@ -5,7 +5,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import type { AuthUser } from '../../../core/auth/auth-session';
 import { can } from '../../../core/auth/auth-session';
-import { type BusinessListQuery, type ListFilter } from '../../business/business-query';
+import { type BusinessListQuery, type ListFilter } from '../../../shared/query/business-query';
 import { AsyncState } from '../../../shared/components/AsyncState';
 import { ConfirmDialog } from '../../../shared/components/ConfirmDialog';
 import { PageHeader } from '../../../shared/components/PageHeader';
