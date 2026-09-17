@@ -53,15 +53,13 @@ app.MapGet("/health", () => Results.Ok(new { status = "ok" }))
 
 app.MapAuthEndpoints();
 app.MapProfileEndpoints();
-app.MapOptionalProfileAvatarEndpoints();
 app.MapDashboardEndpoints();
 app.MapProductEndpoints();
-app.MapOptionalProductImageEndpoints();
 app.MapOrderEndpoints();
 app.MapEmployeeEndpoints();
 app.MapReportEndpoints();
 app.MapSettingsEndpoints();
-app.MapOptionalAiEndpoints();
+app.MapGeneratedOptionalEndpoints();
 
 app.Run();
 
