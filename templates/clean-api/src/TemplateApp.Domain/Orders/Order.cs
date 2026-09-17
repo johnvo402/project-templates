@@ -63,7 +63,7 @@ public sealed class Order : AggregateRoot<OrderId>
     public void ChangeStatus(OrderStatus status)
     {
         if (Status is OrderStatus.Completed or OrderStatus.Cancelled)
-            throw new DomainException("Completed or cancelled orders cannot change status.");
+            throw new DomainException("orders.invalid-status-transition", "Completed or cancelled orders cannot change status.");
 
         if (status == OrderStatus.Cancelled)
         {
@@ -71,8 +71,17 @@ public sealed class Order : AggregateRoot<OrderId>
             return;
         }
 
-        if (status < Status)
-            throw new DomainException("Order status cannot move backwards.");
+        var nextStatus = Status switch
+        {
+            OrderStatus.Pending => OrderStatus.Processing,
+            OrderStatus.Processing => OrderStatus.Completed,
+            _ => throw new DomainException("orders.invalid-status-transition", "Order cannot move to another status.")
+        };
+
+        if (status != nextStatus)
+            throw new DomainException(
+                "orders.invalid-status-transition",
+                $"Order status can only move from {Status} to {nextStatus}.");
 
         Status = status;
         UpdatedAt = DateTimeOffset.UtcNow;
