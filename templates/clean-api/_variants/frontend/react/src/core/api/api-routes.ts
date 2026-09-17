@@ -22,5 +22,8 @@ export const API_ROUTES = {
     topProducts: `${API_BASE}/reports/top-products`,
   },
   settings: `${API_BASE}/settings`,
-  ai: { generate: `${API_BASE}/ai/generate` },
+  ai: {
+    generate: `${API_BASE}/ai/generate`,
+    businessChat: `${API_BASE}/ai/business-chat`,
+  },
 } as const;

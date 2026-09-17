@@ -1,13 +1,30 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { map, Observable } from 'rxjs';
+import { catchError, map, Observable, throwError } from 'rxjs';
 import { API_ROUTES } from '../../core/api/api.routes';
 import { ApiResponse } from '../../core/api/api.models';
+
+export type BusinessChatMessage = {
+  role: 'user' | 'assistant';
+  content: string;
+};
+
+export type BusinessChatResponse = {
+  answer: string;
+  topic: string;
+  suggestedQuestions: string[];
+};
 
 @Injectable({ providedIn: 'root' })
 export class AiApiService {
   private readonly http = inject(HttpClient);
-  generate(prompt: string): Observable<string> {
-    return this.http.post<ApiResponse<{ text: string }>>(API_ROUTES.ai.generate, { prompt }).pipe(map(x => x.results.text));
+
+  askBusinessQuestion(question: string, history: BusinessChatMessage[]): Observable<BusinessChatResponse> {
+    return this.http.post<ApiResponse<BusinessChatResponse>>(API_ROUTES.ai.businessChat, { question, history }).pipe(
+      map(response => response.results),
+      catchError(error => throwError(() => new Error(
+        error?.error?.title ?? error?.error?.detail ?? 'Business AI request failed.',
+      ))),
+    );
   }
 }
