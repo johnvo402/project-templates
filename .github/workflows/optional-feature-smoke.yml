@@ -1,0 +1,112 @@
+name: optional-feature-smoke
+
+on:
+  push:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: optional-feature-smoke-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  generated-frontends:
+    name: ${{ matrix.label }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - label: react optional off
+            project: OptionalReactOff
+            arguments: --framework net9.0 --frontend react --minio false --ai none --filter false
+            minio: false
+            ai: none
+          - label: angular optional off
+            project: OptionalAngularOff
+            arguments: --framework net9.0 --frontend angular --minio false --ai none --filter false
+            minio: false
+            ai: none
+          - label: react optional on
+            project: OptionalReactOn
+            arguments: --framework net9.0 --frontend react --minio true --ai gemini --filter false
+            minio: true
+            ai: gemini
+          - label: angular optional on
+            project: OptionalAngularOn
+            arguments: --framework net9.0 --frontend angular --minio true --ai gemini --filter false
+            minio: true
+            ai: gemini
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 9.0.x
+
+      - name: Generate project
+        shell: bash
+        run: |
+          output="${RUNNER_TEMP}/optional-feature-smoke/${{ matrix.project }}"
+          dotnet new install ./templates/clean-api
+          dotnet new jv-api \
+            -n "${{ matrix.project }}" \
+            -o "$output" \
+            ${{ matrix.arguments }} \
+            --allow-scripts Yes
+          echo "SMOKE_OUTPUT=$output" >> "$GITHUB_ENV"
+
+      - name: Check MinIO boundary
+        shell: bash
+        run: |
+          required_backend=(IObjectStorage.cs ProductImageEndpointRegistration.cs ProfileAvatarEndpointRegistration.cs)
+          if [ "${{ matrix.minio }}" = "true" ]; then
+            for name in "${required_backend[@]}"; do
+              if ! find "$SMOKE_OUTPUT/src" -type f -name "$name" -print -quit | grep -q .; then
+                echo "Expected MinIO artifact '$name' was not generated." >&2
+                exit 1
+              fi
+            done
+            if ! find "$SMOKE_OUTPUT/frontend/src" -type f \( -name 'ProductImagesWorkspace.tsx' -o -name 'product-images-workspace.component.ts' \) -print -quit | grep -q .; then
+              echo "MinIO is enabled but the Product Images frontend workspace is missing." >&2
+              exit 1
+            fi
+          else
+            leaked_backend="$(find "$SMOKE_OUTPUT/src" -type f \( -name 'IObjectStorage.cs' -o -name 'ProductImageEndpointRegistration.cs' -o -name 'ProfileAvatarEndpointRegistration.cs' -o -iname '*Minio*' \) -print || true)"
+            leaked_frontend="$(find "$SMOKE_OUTPUT/frontend/src" -type f \( -name 'ProductImagesWorkspace.tsx' -o -name 'product-images-workspace.component.ts' -o -name 'product-images.api.ts' -o -name 'product-images-api.service.ts' -o -name 'avatar.api.ts' \) -print || true)"
+            leaked_wiring="$(grep -RInE --exclude-dir=node_modules '(showProductImages|ProductImagesWorkspace|product-images-workspace)' "$SMOKE_OUTPUT/frontend/src" || true)"
+            if [ -n "$leaked_backend$leaked_frontend$leaked_wiring" ]; then
+              printf '%s\n%s\n%s\n' "$leaked_backend" "$leaked_frontend" "$leaked_wiring"
+              echo "MinIO/storage artifacts leaked into a --minio false generated project." >&2
+              exit 1
+            fi
+          fi
+
+      - name: Check AI boundary
+        shell: bash
+        run: |
+          if [ "${{ matrix.ai }}" != "none" ]; then
+            for name in IAiService.cs AiEndpointRegistration.cs; do
+              if ! find "$SMOKE_OUTPUT/src" -type f -name "$name" -print -quit | grep -q .; then
+                echo "Expected AI artifact '$name' was not generated." >&2
+                exit 1
+              fi
+            done
+            if ! find "$SMOKE_OUTPUT/frontend/src" -type f \( -name 'AiPanel.tsx' -o -name 'ai.page.ts' \) -print -quit | grep -q .; then
+              echo "AI is enabled but the frontend AI feature is missing." >&2
+              exit 1
+            fi
+          else
+            leaked_backend="$(find "$SMOKE_OUTPUT/src" -type f \( -name 'IAiService.cs' -o -name 'AiEndpointRegistration.cs' -o -name 'GenerateAiText*' -o -iname '*Gemini*' -o -iname '*OpenAi*' \) -print || true)"
+            leaked_frontend="$(find "$SMOKE_OUTPUT/frontend/src" -type f \( -name 'AiPanel.tsx' -o -name 'ai.page.ts' -o -name 'ai-api.service.ts' -o -name 'ai.store.ts' -o -name 'ai.api.ts' \) -print || true)"
+            leaked_wiring="$(grep -RInE --exclude-dir=node_modules '(showAi|ai\.generate|features[/\\]ai)' "$SMOKE_OUTPUT/frontend/src" || true)"
+            if [ -n "$leaked_backend$leaked_frontend$leaked_wiring" ]; then
+              printf '%s\n%s\n%s\n' "$leaked_backend" "$leaked_frontend" "$leaked_wiring"
+              echo "AI artifacts leaked into an --ai none generated project." >&2
+              exit 1
+            fi
+          fi
