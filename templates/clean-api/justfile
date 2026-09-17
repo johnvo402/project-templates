@@ -16,6 +16,10 @@ test:
 run:
     dotnet run --project src/TemplateApp.Api
 
+init-db:
+    dotnet ef migrations add InitialCreate --project src/TemplateApp.Infrastructure --startup-project src/TemplateApp.Migrations
+    dotnet ef database update --project src/TemplateApp.Infrastructure --startup-project src/TemplateApp.Migrations
+
 migrate name:
     dotnet ef migrations add {{name}} --project src/TemplateApp.Infrastructure --startup-project src/TemplateApp.Migrations
 

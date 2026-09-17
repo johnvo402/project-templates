@@ -44,13 +44,15 @@ public static class AuthenticationExtensions
             .RequireAuthenticatedUser()
             .Build();
 
-        services.AddAuthorizationBuilder()
-            .SetFallbackPolicy(fallbackPolicy)
-            .AddPolicy(AppPolicies.TodosRead, policy => policy.RequireClaim(CustomClaimTypes.Permission, AppPermissions.TodosRead))
-            .AddPolicy(AppPolicies.TodosWrite, policy => policy.RequireClaim(CustomClaimTypes.Permission, AppPermissions.TodosWrite))
-            .AddPolicy(AppPolicies.UsersRead, policy => policy.RequireClaim(CustomClaimTypes.Permission, AppPermissions.UsersRead))
-            .AddPolicy(AppPolicies.UsersManage, policy => policy.RequireClaim(CustomClaimTypes.Permission, AppPermissions.UsersManage))
-            .AddPolicy(AppPolicies.AiGenerate, policy => policy.RequireClaim(CustomClaimTypes.Permission, AppPermissions.AiGenerate));
+        var authorization = services.AddAuthorizationBuilder()
+            .SetFallbackPolicy(fallbackPolicy);
+
+        foreach (var permission in AppPermissions.All)
+        {
+            authorization.AddPolicy(
+                permission,
+                policy => policy.RequireClaim(CustomClaimTypes.Permission, permission));
+        }
 
         return services;
     }

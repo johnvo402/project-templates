@@ -33,6 +33,17 @@ public static class DatabaseMigrationExtensions
             {
                 using var scope = services.CreateScope();
                 var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                var migrations = dbContext.Database.GetMigrations().ToArray();
+
+                if (migrations.Length == 0)
+                {
+                    const string message =
+                        "No EF Core migrations were found. Generate the initial migration with 'just migrate InitialCreate' " +
+                        "(or the equivalent dotnet ef command) before starting the API with Database__AutoMigrate=true.";
+                    logger.LogCritical(message);
+                    throw new InvalidOperationException(message);
+                }
+
                 var pending = (await dbContext.Database
                     .GetPendingMigrationsAsync(cancellationToken))
                     .ToArray();

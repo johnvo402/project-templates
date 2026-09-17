@@ -1,0 +1,7 @@
+import { ChangeDetectionStrategy, Component, input } from '@angular/core';
+import { MatCardModule } from '@angular/material/card';
+import { formatCurrency } from '../../../shared/utils/formatters';
+import type { TopProductReport } from '../report.models';
+
+@Component({ selector:'app-top-products-report', standalone:true, imports:[MatCardModule], changeDetection:ChangeDetectionStrategy.OnPush, styles:[`mat-card{height:100%;border-radius:16px}mat-card-content{padding:20px}h2,p{margin:0}p{margin:4px 0 16px;color:var(--mat-sys-on-surface-variant)}.row{display:grid;grid-template-columns:minmax(0,1fr) 70px 120px;gap:12px;padding:12px 0;border-top:1px solid var(--mat-sys-outline-variant)}.head{font-size:12px;font-weight:700;color:var(--mat-sys-on-surface-variant)}.right{text-align:right}.empty{text-align:center;padding:32px;color:var(--mat-sys-on-surface-variant)}`], template:`<mat-card appearance="outlined"><mat-card-content><h2>Top products</h2><p>Quantity and revenue across the strongest products.</p><div class="row head"><span>Product</span><span class="right">Qty</span><span class="right">Revenue</span></div>@for(row of rows();track row.productName){<div class="row"><span>{{row.productName}}</span><strong class="right">{{row.quantity}}</strong><strong class="right">{{money(row.revenue)}}</strong></div>}@empty{<div class="empty">No product report data yet.</div>}</mat-card-content></mat-card>` })
+export class TopProductsReportComponent { readonly rows=input.required<TopProductReport[]>(); readonly money=formatCurrency; }

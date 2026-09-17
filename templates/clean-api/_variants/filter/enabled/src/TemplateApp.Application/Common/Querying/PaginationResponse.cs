@@ -8,11 +8,15 @@ public sealed class PaginationResponse<T>
     public IReadOnlyList<T> Data { get; }
     public Paging Paging { get; }
 
+    [JsonConstructor]
     private PaginationResponse(IReadOnlyList<T> data, Paging paging)
     {
         Data = data;
         Paging = paging;
     }
+
+    public PaginationResponse<TNext> WithData<TNext>(IReadOnlyList<TNext> data)
+        => new(data, Paging);
 
     public static PaginationResponse<T> ForPage(
         IReadOnlyList<T> data,
@@ -64,6 +68,7 @@ public sealed class Paging
     public string? Before { get; }
     public string? After { get; }
 
+    [JsonConstructor]
     internal Paging(
         int totalPage,
         int? currentPage,
