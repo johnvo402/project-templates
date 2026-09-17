@@ -4,7 +4,7 @@ import { Subscription, firstValueFrom, timer } from 'rxjs';
 import { AsyncStateComponent } from '../../../components/async-state.component';
 import { PageHeaderComponent } from '../../../components/page-header.component';
 import { formatCurrency } from '../../../utils/formatters';
-import { getErrorMessage } from '../../../utils/http-error';
+import { getErrorMessage } from '../../../core/api/http-error';
 import { DashboardMetricCardComponent } from '../components/dashboard-metric-card.component';
 import { RecentOrdersPanelComponent } from '../components/recent-orders-panel.component';
 import { TopProductsPanelComponent } from '../components/top-products-panel.component';

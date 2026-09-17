@@ -3,7 +3,7 @@ import { Box, Button } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { AsyncState } from '../../../components/AsyncState';
 import { PageHeader } from '../../../components/PageHeader';
-import { getErrorMessage } from '../../../utils/http-error';
+import { getErrorMessage } from '../../../core/api/http-error';
 import { reportsApi } from '../api/reports.api';
 import { OrderStatusReportCard } from '../components/OrderStatusReportCard';
 import { TopProductsReportCard } from '../components/TopProductsReportCard';

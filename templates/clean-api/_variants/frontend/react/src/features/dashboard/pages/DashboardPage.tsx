@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { AsyncState } from '../../../components/AsyncState';
 import { PageHeader } from '../../../components/PageHeader';
 import { formatCurrency } from '../../../utils/formatters';
-import { getErrorMessage } from '../../../utils/http-error';
+import { getErrorMessage } from '../../../core/api/http-error';
 import { dashboardApi } from '../api/dashboard.api';
 import { DashboardMetricCard } from '../components/DashboardMetricCard';
 import { RecentOrdersPanel } from '../components/RecentOrdersPanel';

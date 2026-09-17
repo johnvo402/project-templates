@@ -2,15 +2,15 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { map } from 'rxjs';
 import { ApiResponse, PaginationResponse } from '../../../core/api/api.models';
-import { buildBusinessListUrl, type BusinessListQuery } from '../../../query/business-query';
+import { buildListUrl, type ListQuery } from '../../../core/api/list-query';
 import type { Product, ProductModel } from '../product.models';
 
 @Injectable({ providedIn: 'root' })
 export class ProductsApiService {
   private readonly http = inject(HttpClient);
 
-  list(query: BusinessListQuery) {
-    return this.http.get<ApiResponse<PaginationResponse<Product>>>(buildBusinessListUrl('products', query)).pipe(map(response => response.results));
+  list(query: ListQuery) {
+    return this.http.get<ApiResponse<PaginationResponse<Product>>>(buildListUrl('products', query)).pipe(map(response => response.results));
   }
 
   create(model: ProductModel, image: File | null = null) {

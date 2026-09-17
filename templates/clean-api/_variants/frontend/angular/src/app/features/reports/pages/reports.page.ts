@@ -3,7 +3,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { firstValueFrom } from 'rxjs';
 import { AsyncStateComponent } from '../../../components/async-state.component';
 import { PageHeaderComponent } from '../../../components/page-header.component';
-import { getErrorMessage } from '../../../utils/http-error';
+import { getErrorMessage } from '../../../core/api/http-error';
 import { OrderStatusReportComponent } from '../components/order-status-report.component';
 import { TopProductsReportComponent } from '../components/top-products-report.component';
 import { ReportsApiService } from '../data-access/reports-api.service';

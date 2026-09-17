@@ -159,10 +159,9 @@ React and Angular use a feature-oriented layout:
 
 ```text
 app/                  # application composition / shell
-core/                 # API and auth infrastructure
+core/                 # API, list-query and auth infrastructure
 components/           # reusable UI
 feedback/             # notifications / user feedback
-query/                # cross-feature list/query helpers
 utils/                # generic formatting/error helpers
 features/              # business capabilities
   auth/

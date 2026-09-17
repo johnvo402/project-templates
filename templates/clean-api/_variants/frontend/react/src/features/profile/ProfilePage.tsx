@@ -6,7 +6,7 @@ import type { AuthUser } from '../../core/auth/auth-session';
 import { AsyncState } from '../../components/AsyncState';
 import { PageHeader } from '../../components/PageHeader';
 import { useNotifications } from '../../feedback/NotificationProvider';
-import { getErrorMessage } from '../../utils/http-error';
+import { getErrorMessage } from '../../core/api/http-error';
 import { profileApi } from './profile.api';
 
 type Props = { user: AuthUser; onProfileUpdated: (displayName: string) => void };

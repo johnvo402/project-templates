@@ -8,8 +8,8 @@ import { can } from '../../../core/auth/auth-session';
 import { AsyncState } from '../../../components/AsyncState';
 import { PageHeader } from '../../../components/PageHeader';
 import { useNotifications } from '../../../feedback/NotificationProvider';
-import { getErrorMessage } from '../../../utils/http-error';
-import { type BusinessListQuery, type ListFilter } from '../../../query/business-query';
+import { getErrorMessage } from '../../../core/api/http-error';
+import { type ListQuery, type ListFilter } from '../../../core/api/list-query';
 import { employeesApi } from '../api/employees.api';
 import { EmployeeFilters } from '../components/EmployeeFilters';
 import { EmployeeFormDialog } from '../components/EmployeeFormDialog';
@@ -19,13 +19,13 @@ import type { CreateEmployeeModel, Employee, EmployeeFilterState, EmployeeRole }
 type Props = { user: AuthUser };
 
 const initialFilters: EmployeeFilterState = { keyword: '', sort: '', role: '', status: '' };
-const initialQuery: BusinessListQuery = { page: 1, pageSize: 20 };
+const initialQuery: ListQuery = { page: 1, pageSize: 20 };
 const pageSizes = [10, 20, 50, 100];
 
 export function EmployeesPage({ user }: Props) {
   const queryClient = useQueryClient();
   const notifications = useNotifications();
-  const [query, setQuery] = useState<BusinessListQuery>(initialQuery);
+  const [query, setQuery] = useState<ListQuery>(initialQuery);
   const [filters, setFilters] = useState<EmployeeFilterState>(initialFilters);
   const [formOpen, setFormOpen] = useState(false);
 

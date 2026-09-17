@@ -9,8 +9,8 @@ import { AuthSessionService } from '../../../core/auth/auth-session.service';
 import { AsyncStateComponent } from '../../../components/async-state.component';
 import { PageHeaderComponent } from '../../../components/page-header.component';
 import { NotificationService } from '../../../feedback/notification.service';
-import { FILTER_ENABLED, type BusinessListQuery, type ListFilter } from '../../../query/business-query';
-import { getErrorMessage } from '../../../utils/http-error';
+import { FILTER_ENABLED, type ListQuery, type ListFilter } from '../../../core/api/list-query';
+import { getErrorMessage } from '../../../core/api/http-error';
 import { EmployeeFiltersComponent } from '../components/employee-filters.component';
 import { EmployeeFormDialogComponent } from '../components/employee-form-dialog.component';
 import { EmployeeTableComponent } from '../components/employee-table.component';
@@ -49,7 +49,7 @@ export class EmployeesPage implements OnInit {
   readonly loading = signal(false);
   readonly error = signal<string | null>(null);
   readonly page = signal<PaginationResponse<Employee> | null>(null);
-  query: BusinessListQuery = { page: 1, pageSize: 20 };
+  query: ListQuery = { page: 1, pageSize: 20 };
 
   private readonly api = inject(EmployeesApiService);
   private readonly dialog = inject(MatDialog);

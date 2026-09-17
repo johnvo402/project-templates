@@ -1,6 +1,6 @@
 import type { ApiResponse, PaginationResponse } from '../../../core/api/api-types';
 import { customFetch } from '../../../core/api/custom-fetch';
-import { buildBusinessListUrl, type BusinessListQuery } from '../../../query/business-query';
+import { buildListUrl, type ListQuery } from '../../../core/api/list-query';
 import type { CreateEmployeeModel, Employee, EmployeeRole } from '../employee.models';
 
 async function result<T>(path: string): Promise<T> {
@@ -15,8 +15,8 @@ const json = (method: string, body: unknown): RequestInit => ({
 });
 
 export const employeesApi = {
-  list(query: BusinessListQuery) {
-    return result<PaginationResponse<Employee>>(buildBusinessListUrl('employees', query));
+  list(query: ListQuery) {
+    return result<PaginationResponse<Employee>>(buildListUrl('employees', query));
   },
   create(model: CreateEmployeeModel) {
     return customFetch<unknown>('/api/employees', json('POST', model));

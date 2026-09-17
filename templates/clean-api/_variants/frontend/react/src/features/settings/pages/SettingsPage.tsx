@@ -6,7 +6,7 @@ import { can, type AuthUser } from '../../../core/auth/auth-session';
 import { AsyncState } from '../../../components/AsyncState';
 import { PageHeader } from '../../../components/PageHeader';
 import { useNotifications } from '../../../feedback/NotificationProvider';
-import { getErrorMessage } from '../../../utils/http-error';
+import { getErrorMessage } from '../../../core/api/http-error';
 import { settingsApi } from '../api/settings.api';
 import type { StoreSettings } from '../settings.models';
 

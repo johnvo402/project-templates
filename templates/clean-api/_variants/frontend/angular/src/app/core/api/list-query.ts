@@ -4,7 +4,7 @@ export type ListFilter = {
   value:string|number|boolean;
 };
 
-export type BusinessListQuery = {
+export type ListQuery = {
   page:number;
   pageSize:number;
   keyword?:string;
@@ -15,11 +15,7 @@ export type BusinessListQuery = {
 
 export const FILTER_ENABLED=false;
 
-export function buildBusinessListUrl(resource:'products'|'orders'|'employees',query:BusinessListQuery):string {
+export function buildListUrl(resource:'products'|'orders'|'employees',query:ListQuery):string {
   const params=new URLSearchParams({page:String(query.page),pageSize:String(query.pageSize)});
   return `/api/${resource}?${params.toString()}`;
-}
-
-export function buildActiveProductsUrl():string {
-  return '/api/products?page=1&pageSize=100&isActive=true';
 }

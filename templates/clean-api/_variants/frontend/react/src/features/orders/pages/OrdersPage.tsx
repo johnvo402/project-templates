@@ -9,8 +9,8 @@ import { AsyncState } from '../../../components/AsyncState';
 import { ConfirmDialog } from '../../../components/ConfirmDialog';
 import { PageHeader } from '../../../components/PageHeader';
 import { useNotifications } from '../../../feedback/NotificationProvider';
-import { type BusinessListQuery, type ListFilter } from '../../../query/business-query';
-import { getErrorMessage } from '../../../utils/http-error';
+import { type ListQuery, type ListFilter } from '../../../core/api/list-query';
+import { getErrorMessage } from '../../../core/api/http-error';
 import { ordersApi } from '../api/orders.api';
 import { OrderDetailDialog } from '../components/OrderDetailDialog';
 import { OrderFilters } from '../components/OrderFilters';
@@ -21,13 +21,13 @@ import type { CreateOrderModel, MutableOrderStatus, Order, OrderFilterState } fr
 type Props = { user: AuthUser };
 
 const initialFilters: OrderFilterState = { keyword: '', sort: '', status: '', minTotal: '' };
-const initialQuery: BusinessListQuery = { page: 1, pageSize: 20 };
+const initialQuery: ListQuery = { page: 1, pageSize: 20 };
 const pageSizes = [10, 20, 50, 100];
 
 export function OrdersPage({ user }: Props) {
   const queryClient = useQueryClient();
   const notifications = useNotifications();
-  const [query, setQuery] = useState<BusinessListQuery>(initialQuery);
+  const [query, setQuery] = useState<ListQuery>(initialQuery);
   const [filters, setFilters] = useState<OrderFilterState>(initialFilters);
   const [formOpen, setFormOpen] = useState(false);
   const [cancelTarget, setCancelTarget] = useState<Order | null>(null);

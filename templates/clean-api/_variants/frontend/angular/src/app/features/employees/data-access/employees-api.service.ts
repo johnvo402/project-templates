@@ -2,15 +2,15 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { map } from 'rxjs';
 import type { ApiResponse, PaginationResponse } from '../../../core/api/api.models';
-import { buildBusinessListUrl, type BusinessListQuery } from '../../../query/business-query';
+import { buildListUrl, type ListQuery } from '../../../core/api/list-query';
 import type { CreateEmployeeModel, Employee, EmployeeRole } from '../employee.models';
 
 @Injectable({ providedIn: 'root' })
 export class EmployeesApiService {
   private readonly http = inject(HttpClient);
 
-  list(query: BusinessListQuery) {
-    return this.http.get<ApiResponse<PaginationResponse<Employee>>>(buildBusinessListUrl('employees', query)).pipe(map(response => response.results));
+  list(query: ListQuery) {
+    return this.http.get<ApiResponse<PaginationResponse<Employee>>>(buildListUrl('employees', query)).pipe(map(response => response.results));
   }
 
   create(model: CreateEmployeeModel) { return this.http.post('/api/employees', model); }
