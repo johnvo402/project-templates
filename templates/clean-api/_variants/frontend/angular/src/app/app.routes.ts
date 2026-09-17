@@ -1,42 +1,14 @@
 import { Routes } from '@angular/router';
-import { permissionGuard } from './core/auth/auth.guard';
+import { permissionGuard } from './core/auth/permission.guard';
 
-export const routes: Routes = [
-  {
-    path: 'dashboard',
-    canActivate: [permissionGuard('dashboard.view')],
-    loadComponent: () =>
-      import('./features/dashboard/pages/dashboard.page').then((m) => m.DashboardPage)
-  },
-  {
-    path: 'products',
-    canActivate: [permissionGuard('products.view')],
-    loadComponent: () =>
-      import('./features/products/pages/products.page').then((m) => m.ProductsPage)
-  },
-  {
-    path: 'orders',
-    canActivate: [permissionGuard('orders.view')],
-    loadComponent: () =>
-      import('./features/orders/pages/orders.page').then((m) => m.OrdersPage)
-  },
-  {
-    path: 'employees',
-    canActivate: [permissionGuard('employees.view')],
-    loadComponent: () =>
-      import('./features/employees/pages/employees.page').then((m) => m.EmployeesPage)
-  },
-  {
-    path: 'reports',
-    canActivate: [permissionGuard('reports.view')],
-    loadComponent: () =>
-      import('./features/reports/pages/reports.page').then((m) => m.ReportsPage)
-  },
-  {
-    path: 'settings',
-    canActivate: [permissionGuard('settings.view')],
-    loadComponent: () =>
-      import('./features/settings/pages/settings.page').then((m) => m.SettingsPage)
-  },
-  { path: '**', redirectTo: '' }
+export const appRoutes: Routes = [
+  { path: 'dashboard', title: 'Dashboard', loadComponent: () => import('./features/dashboard/pages/dashboard.page').then(module => module.DashboardPage), canActivate: [permissionGuard], data: { permission: 'dashboard.view' } },
+  { path: 'orders', title: 'Orders', loadComponent: () => import('./features/orders/pages/orders.page').then(module => module.OrdersPage), canActivate: [permissionGuard], data: { permission: 'orders.view' } },
+  { path: 'products', title: 'Products', loadComponent: () => import('./features/products/pages/products.page').then(module => module.ProductsPage), canActivate: [permissionGuard], data: { permission: 'products.view' } },
+  { path: 'employees', title: 'Employees', loadComponent: () => import('./features/employees/pages/employees.page').then(module => module.EmployeesPage), canActivate: [permissionGuard], data: { permission: 'employees.view' } },
+  { path: 'reports', title: 'Reports', loadComponent: () => import('./features/reports/pages/reports.page').then(module => module.ReportsPage), canActivate: [permissionGuard], data: { permission: 'reports.view' } },
+  { path: 'settings', title: 'Settings', loadComponent: () => import('./features/settings/pages/settings.page').then(module => module.SettingsPage), canActivate: [permissionGuard], data: { permission: 'settings.view' } },
+  { path: 'profile', title: 'Profile', loadComponent: () => import('./features/profile/profile.page').then(module => module.ProfilePage) },
+  { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
+  { path: '**', redirectTo: 'profile' },
 ];
