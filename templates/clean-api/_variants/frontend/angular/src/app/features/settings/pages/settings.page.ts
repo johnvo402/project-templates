@@ -10,7 +10,46 @@ import { AsyncStateComponent } from '../../../components/async-state.component';
 import { PageHeaderComponent } from '../../../components/page-header.component';
 import { NotificationService } from '../../../feedback/notification.service';
 import { getErrorMessage } from '../../../core/api/http-error';
+import { configureCurrency } from '../../../utils/formatters';
 import { SettingsApiService } from '../data-access/settings-api.service';
 
-@Component({ selector:'app-settings-page', standalone:true, imports:[ReactiveFormsModule,MatButtonModule,MatCardModule,MatFormFieldModule,MatInputModule,PageHeaderComponent,AsyncStateComponent], styles:[`:host{display:block}mat-card{border-radius:16px}mat-card-content{padding:24px}.form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.full{grid-column:1/-1}@media(max-width:699px){.form-grid{grid-template-columns:1fr}}`], template:`<app-page-header eyebrow="System" title="Settings" description="Store identity and operational defaults."><div pageActions>@if(canUpdate){<button mat-flat-button (click)="save()" [disabled]="saving()||form.invalid">{{saving()?'Saving…':'Save settings'}}</button>}</div></app-page-header><app-async-state [loading]="loading()" [error]="error()" [showRetry]="true" (retry)="load()"/>@if(!loading()&&!error()){<mat-card appearance="outlined"><mat-card-content><form [formGroup]="form" class="form-grid"><mat-form-field appearance="outline"><mat-label>Store name</mat-label><input matInput formControlName="storeName"/></mat-form-field><mat-form-field appearance="outline"><mat-label>Email</mat-label><input matInput type="email" formControlName="storeEmail"/></mat-form-field><mat-form-field appearance="outline"><mat-label>Phone</mat-label><input matInput formControlName="storePhone"/></mat-form-field><mat-form-field appearance="outline"><mat-label>Currency</mat-label><input matInput maxlength="3" formControlName="currency" (input)="uppercaseCurrency()"/></mat-form-field><mat-form-field appearance="outline"><mat-label>Timezone</mat-label><input matInput formControlName="timezone"/></mat-form-field><mat-form-field appearance="outline"><mat-label>Low-stock threshold</mat-label><input matInput type="number" min="0" formControlName="lowStockThreshold"/></mat-form-field></form></mat-card-content></mat-card>}` })
-export class SettingsPage implements OnInit { readonly auth=inject(AuthSessionService); readonly canUpdate=this.auth.can('settings.update'); readonly loading=signal(false); readonly saving=signal(false); readonly error=signal<string|null>(null); private readonly api=inject(SettingsApiService); private readonly notifications=inject(NotificationService); private readonly fb=inject(FormBuilder); readonly form=this.fb.nonNullable.group({storeName:['',Validators.required],storeEmail:['',[Validators.required,Validators.email]],storePhone:[''],currency:['USD',[Validators.required,Validators.minLength(3),Validators.maxLength(3)]],timezone:['UTC',Validators.required],lowStockThreshold:[0,[Validators.required,Validators.min(0)]]}); ngOnInit(){if(!this.canUpdate)this.form.disable();void this.load();} async load(){this.loading.set(true);this.error.set(null);try{const value=await firstValueFrom(this.api.get());this.form.patchValue(value);}catch(error){this.error.set(getErrorMessage(error));}finally{this.loading.set(false);}} uppercaseCurrency(){const control=this.form.controls.currency;const next=control.value.toUpperCase();if(next!==control.value)control.setValue(next,{emitEvent:false});} async save(){if(!this.canUpdate||this.form.invalid)return;this.saving.set(true);try{const saved=await firstValueFrom(this.api.update(this.form.getRawValue()));this.form.patchValue(saved);this.notifications.success('Settings saved.');}catch(error){this.notifications.error(getErrorMessage(error));}finally{this.saving.set(false);}} }
+@Component({ selector:'app-settings-page', standalone:true, imports:[ReactiveFormsModule,MatButtonModule,MatCardModule,MatFormFieldModule,MatInputModule,PageHeaderComponent,AsyncStateComponent], styles:[`:host{display:block}mat-card{border-radius:16px}mat-card-content{padding:24px}.form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.full{grid-column:1/-1}@media(max-width:699px){.form-grid{grid-template-columns:1fr}}`], template:`<app-page-header eyebrow="System" title="Settings" description="Store identity and operational defaults. Currency controls every monetary value shown in the app."><div pageActions>@if(canUpdate){<button mat-flat-button (click)="save()" [disabled]="saving()||form.invalid">{{saving()?'Saving…':'Save settings'}}</button>}</div></app-page-header><app-async-state [loading]="loading()" [error]="error()" [showRetry]="true" (retry)="load()"/>@if(!loading()&&!error()){<mat-card appearance="outlined"><mat-card-content><form [formGroup]="form" class="form-grid"><mat-form-field appearance="outline"><mat-label>Store name</mat-label><input matInput formControlName="storeName"/></mat-form-field><mat-form-field appearance="outline"><mat-label>Email</mat-label><input matInput type="email" formControlName="storeEmail"/></mat-form-field><mat-form-field appearance="outline"><mat-label>Phone</mat-label><input matInput formControlName="storePhone"/></mat-form-field><mat-form-field appearance="outline"><mat-label>Currency</mat-label><input matInput maxlength="3" formControlName="currency" (input)="uppercaseCurrency()"/><mat-hint>ISO 4217 code, for example VND, USD or EUR.</mat-hint></mat-form-field><mat-form-field appearance="outline"><mat-label>Timezone</mat-label><input matInput formControlName="timezone"/></mat-form-field><mat-form-field appearance="outline"><mat-label>Low-stock threshold</mat-label><input matInput type="number" min="0" formControlName="lowStockThreshold"/></mat-form-field></form></mat-card-content></mat-card>}` })
+export class SettingsPage implements OnInit {
+  readonly auth=inject(AuthSessionService);
+  readonly canUpdate=this.auth.can('settings.update');
+  readonly loading=signal(false);
+  readonly saving=signal(false);
+  readonly error=signal<string|null>(null);
+  private readonly api=inject(SettingsApiService);
+  private readonly notifications=inject(NotificationService);
+  private readonly fb=inject(FormBuilder);
+  readonly form=this.fb.nonNullable.group({storeName:['',Validators.required],storeEmail:['',[Validators.required,Validators.email]],storePhone:[''],currency:['VND',[Validators.required,Validators.minLength(3),Validators.maxLength(3)]],timezone:['UTC',Validators.required],lowStockThreshold:[0,[Validators.required,Validators.min(0)]]});
+
+  ngOnInit(){if(!this.canUpdate)this.form.disable();void this.load();}
+
+  async load(){
+    this.loading.set(true);
+    this.error.set(null);
+    try{
+      const value=await firstValueFrom(this.api.get());
+      this.form.patchValue(value);
+      configureCurrency(value.currency);
+    }catch(error){this.error.set(getErrorMessage(error));}
+    finally{this.loading.set(false);}
+  }
+
+  uppercaseCurrency(){const control=this.form.controls.currency;const next=control.value.toUpperCase();if(next!==control.value)control.setValue(next,{emitEvent:false});}
+
+  async save(){
+    if(!this.canUpdate||this.form.invalid)return;
+    const model=this.form.getRawValue();
+    this.saving.set(true);
+    try{
+      await firstValueFrom(this.api.update(model));
+      configureCurrency(model.currency);
+      this.notifications.success('Settings saved.');
+      await this.load();
+    }catch(error){this.notifications.error(getErrorMessage(error));}
+    finally{this.saving.set(false);}
+  }
+}

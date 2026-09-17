@@ -13,6 +13,19 @@ public static class SettingsEndpoints
     {
         var group = endpoints.MapGroup("/api/settings").WithTags("Settings");
 
+        group.MapGet("/display", async (ISender sender, CancellationToken cancellationToken) =>
+        {
+            var result = await sender.Send(new GetSettingsQuery(), cancellationToken);
+            if (result.IsFailure)
+                return result.ToHttpResult();
+
+            var settings = result.Value!;
+            return Results.Ok(new ApiResponse<StoreDisplaySettingsResponse>(
+                new StoreDisplaySettingsResponse(settings.Currency, settings.Timezone)));
+        })
+        .WithName("GetDisplaySettings")
+        .RequireAuthorization();
+
         group.MapGet("/", async (ISender sender, CancellationToken cancellationToken) =>
         {
             var result = await sender.Send(new GetSettingsQuery(), cancellationToken);
@@ -31,4 +44,6 @@ public static class SettingsEndpoints
 
         return endpoints;
     }
+
+    private sealed record StoreDisplaySettingsResponse(string Currency, string Timezone);
 }

@@ -1,5 +1,6 @@
 import { API_ROUTES } from '../api/api-routes';
 import type { ApiResponse } from '../api/api-types';
+import { configureCurrency } from '../../utils/formatters';
 import { accessTokenStore } from './access-token';
 
 export type AuthUser = {
@@ -14,6 +15,11 @@ type AuthTokenResponse = {
   accessToken: string;
   accessTokenExpiresAtUtc: string;
   user: AuthUser;
+};
+
+type DisplaySettingsResponse = {
+  currency: string;
+  timezone: string;
 };
 
 let refreshPromise: Promise<AuthUser | null> | null = null;
@@ -34,6 +40,24 @@ function messageOf(error: unknown): string {
   return 'Request failed.';
 }
 
+async function loadDisplaySettings(): Promise<void> {
+  const token = accessTokenStore.get();
+  if (!token) return;
+
+  try {
+    const response = await fetch(API_ROUTES.settingsDisplay, {
+      credentials: 'include',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!response.ok) return;
+
+    const envelope = await response.json() as ApiResponse<DisplaySettingsResponse>;
+    configureCurrency(envelope.results.currency);
+  } catch {
+    // Formatting falls back to the template's VND default if preferences cannot be loaded.
+  }
+}
+
 async function authenticate(
   path: string,
   payload: { email: string; password: string; displayName?: string },
@@ -47,6 +71,7 @@ async function authenticate(
   try {
     const envelope = await readJson<ApiResponse<AuthTokenResponse>>(response);
     accessTokenStore.set(envelope.results.accessToken);
+    await loadDisplaySettings();
     return envelope.results.user;
   } catch (error) {
     throw new Error(messageOf(error));
@@ -65,10 +90,12 @@ export function refreshAccessToken(): Promise<AuthUser | null> {
     const response = await fetch(API_ROUTES.auth.refresh, { method: 'POST', credentials: 'include' });
     if (!response.ok) {
       accessTokenStore.clear();
+      configureCurrency('VND');
       return null;
     }
     const envelope = await response.json() as ApiResponse<AuthTokenResponse>;
     accessTokenStore.set(envelope.results.accessToken);
+    await loadDisplaySettings();
     return envelope.results.user;
   })().finally(() => { refreshPromise = null; });
   return refreshPromise;
@@ -76,7 +103,10 @@ export function refreshAccessToken(): Promise<AuthUser | null> {
 
 export async function logout(): Promise<void> {
   try { await fetch(API_ROUTES.auth.logout, { method: 'POST', credentials: 'include' }); }
-  finally { accessTokenStore.clear(); }
+  finally {
+    accessTokenStore.clear();
+    configureCurrency('VND');
+  }
 }
 
 export function bootstrapAuth(): Promise<AuthUser | null> { return refreshAccessToken(); }
