@@ -69,10 +69,10 @@ jobs:
             -o -name 'business-pagination.component.ts' \
             -o -name 'business.css' \
             -o -name 'business.routes.ts' \
-            -o -name 'business-query.ts' \
+            -o -path '*/features/business/business-query.ts' \
           \) -print || true)"
           forbidden_refs="$(grep -RInE --exclude-dir=node_modules \
-            '(BusinessWorkspace|business-api\.service|business-pagination|business\.css|business\.routes|business-query)' \
+            '(BusinessWorkspace|business-api\.service|business-pagination|business\.css|business\.routes|features[/\\]business[/\\]business-query|business[/\\]business-query)' \
             "$SMOKE_OUTPUT/frontend/src" || true)"
           if [ -n "$forbidden_paths$forbidden_refs" ]; then
             printf '%s\n%s\n' "$forbidden_paths" "$forbidden_refs"
