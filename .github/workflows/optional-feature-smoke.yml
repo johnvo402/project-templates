@@ -83,22 +83,56 @@ jobs:
       - name: Check MinIO boundary
         shell: bash
         run: |
-          required_backend=(IObjectStorage.cs ProductImageEndpointRegistration.cs ProfileAvatarEndpointRegistration.cs)
           if [ "${{ matrix.minio }}" = "true" ]; then
+            required_backend=(IObjectStorage.cs ProductImageModel.cs Product.Storage.cs ProfileAvatarEndpointRegistration.cs)
             for name in "${required_backend[@]}"; do
               if ! find "$SMOKE_OUTPUT/src" -type f -name "$name" -print -quit | grep -q .; then
                 echo "Expected MinIO artifact '$name' was not generated." >&2
                 exit 1
               fi
             done
-            if ! find "$SMOKE_OUTPUT/frontend/src" -type f \( -name 'ProductImagesWorkspace.tsx' -o -name 'product-images-workspace.component.ts' \) -print -quit | grep -q .; then
-              echo "MinIO is enabled but the Product Images frontend workspace is missing." >&2
+
+            if ! grep -RIlF "body.set('image', image)" "$SMOKE_OUTPUT/frontend/src" | grep -q .; then
+              echo "MinIO is enabled but Product create/update does not send the inline image field." >&2
+              exit 1
+            fi
+
+            legacy_backend="$(find "$SMOKE_OUTPUT/src" -type f \( \
+              -name 'ProductImageEndpointRegistration.cs' \
+              -o -name 'ProductImage.cs' \
+              -o -name 'ProductImageConfiguration.cs' \
+              -o -name 'ProductImageRequests.cs' \
+              -o -name 'ProductImageHandlers.cs' \
+            \) -print || true)"
+            legacy_frontend="$(find "$SMOKE_OUTPUT/frontend/src" -type f \( \
+              -name 'ProductImagesWorkspace.tsx' \
+              -o -name 'product-images-workspace.component.ts' \
+              -o -name 'product-images.api.ts' \
+              -o -name 'product-images-api.service.ts' \
+            \) -print || true)"
+            legacy_wiring="$(grep -RInE --exclude-dir=node_modules '(ProductImagesWorkspace|product-images-workspace|/products/images|MapOptionalProductImageEndpoints)' "$SMOKE_OUTPUT" || true)"
+            if [ -n "$legacy_backend$legacy_frontend$legacy_wiring" ]; then
+              printf '%s\n%s\n%s\n' "$legacy_backend" "$legacy_frontend" "$legacy_wiring"
+              echo "Standalone Product Images architecture returned in generated output." >&2
               exit 1
             fi
           else
-            leaked_backend="$(find "$SMOKE_OUTPUT/src" -type f \( -name 'IObjectStorage.cs' -o -name 'ProductImageEndpointRegistration.cs' -o -name 'ProfileAvatarEndpointRegistration.cs' -o -iname '*Minio*' \) -print || true)"
-            leaked_frontend="$(find "$SMOKE_OUTPUT/frontend/src" -type f \( -name 'ProductImagesWorkspace.tsx' -o -name 'product-images-workspace.component.ts' -o -name 'product-images.api.ts' -o -name 'product-images-api.service.ts' -o -name 'avatar.api.ts' \) -print || true)"
-            leaked_wiring="$(grep -RInE --exclude-dir=node_modules '(showProductImages|ProductImagesWorkspace|product-images-workspace)' "$SMOKE_OUTPUT/frontend/src" || true)"
+            leaked_backend="$(find "$SMOKE_OUTPUT/src" -type f \( \
+              -name 'IObjectStorage.cs' \
+              -o -name 'ProductImageModel.cs' \
+              -o -name 'Product.Storage.cs' \
+              -o -name 'ProfileAvatarEndpointRegistration.cs' \
+              -o -iname '*Minio*' \
+            \) -print || true)"
+            leaked_frontend="$(find "$SMOKE_OUTPUT/frontend/src" -type f \( \
+              -name 'ProductImagesWorkspace.tsx' \
+              -o -name 'product-images-workspace.component.ts' \
+              -o -name 'product-images.api.ts' \
+              -o -name 'product-images-api.service.ts' \
+              -o -name 'avatar.api.ts' \
+              -o -name 'avatar-api.service.ts' \
+            \) -print || true)"
+            leaked_wiring="$(grep -RInE --exclude-dir=node_modules \"(body\\.set\\('image'|Product image|product-image|showProductImages|ProductImagesWorkspace|product-images-workspace)\" "$SMOKE_OUTPUT/frontend/src" || true)"
             if [ -n "$leaked_backend$leaked_frontend$leaked_wiring" ]; then
               printf '%s\n%s\n%s\n' "$leaked_backend" "$leaked_frontend" "$leaked_wiring"
               echo "MinIO/storage artifacts leaked into a --minio false generated project." >&2
