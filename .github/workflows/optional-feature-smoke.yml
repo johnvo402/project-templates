@@ -132,7 +132,9 @@ jobs:
               -o -name 'avatar.api.ts' \
               -o -name 'avatar-api.service.ts' \
             \) -print || true)"
-            leaked_wiring="$(grep -RInE --exclude-dir=node_modules \"(body\\.set\\('image'|Product image|product-image|showProductImages|ProductImagesWorkspace|product-images-workspace)\" "$SMOKE_OUTPUT/frontend/src" || true)"
+            leaked_wiring="$(grep -RInE --exclude-dir=node_modules \
+              '(body\.set.*image|Product image|product-image|showProductImages|ProductImagesWorkspace|product-images-workspace)' \
+              "$SMOKE_OUTPUT/frontend/src" || true)"
             if [ -n "$leaked_backend$leaked_frontend$leaked_wiring" ]; then
               printf '%s\n%s\n%s\n' "$leaked_backend" "$leaked_frontend" "$leaked_wiring"
               echo "MinIO/storage artifacts leaked into a --minio false generated project." >&2
