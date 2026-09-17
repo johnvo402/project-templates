@@ -9,7 +9,6 @@ import ReceiptLongOutlinedIcon from '@mui/icons-material/ReceiptLongOutlined';
 import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
 import type { ReactNode } from 'react';
 import { can, type AuthUser } from '../core/auth/auth-session';
-import type { BusinessSection } from '../features/business/BusinessWorkspace';
 
 export type OptionalNavigationFeature = 'product-images' | 'ai';
 
@@ -19,7 +18,6 @@ export type AppNavigationItem = {
   group: string;
   icon: ReactNode;
   permission?: string;
-  section?: BusinessSection;
   optionalFeature?: OptionalNavigationFeature;
 };
 
@@ -29,14 +27,14 @@ export type NavigationOptions = {
 };
 
 export const appNavigation: readonly AppNavigationItem[] = [
-  { label: 'Dashboard', path: '/dashboard', group: 'Overview', permission: 'dashboard.view', section: 'dashboard', icon: <DashboardOutlinedIcon /> },
+  { label: 'Dashboard', path: '/dashboard', group: 'Overview', permission: 'dashboard.view', icon: <DashboardOutlinedIcon /> },
   { label: 'Orders', path: '/orders', group: 'Sales', permission: 'orders.view', icon: <ReceiptLongOutlinedIcon /> },
   { label: 'Products', path: '/products', group: 'Sales', permission: 'products.view', icon: <Inventory2OutlinedIcon /> },
   { label: 'Product Images', path: '/products/images', group: 'Sales', permission: 'products.view', optionalFeature: 'product-images', icon: <ImageOutlinedIcon /> },
   { label: 'Employees', path: '/employees', group: 'Management', permission: 'employees.view', icon: <GroupsOutlinedIcon /> },
-  { label: 'Reports', path: '/reports', group: 'Analytics', permission: 'reports.view', section: 'reports', icon: <BarChartOutlinedIcon /> },
-  { label: 'Settings', path: '/settings', group: 'System', permission: 'settings.view', section: 'settings', icon: <SettingsOutlinedIcon /> },
-  { label: 'Profile', path: '/profile', group: 'Account', section: 'profile', icon: <AccountCircleOutlinedIcon /> },
+  { label: 'Reports', path: '/reports', group: 'Analytics', permission: 'reports.view', icon: <BarChartOutlinedIcon /> },
+  { label: 'Settings', path: '/settings', group: 'System', permission: 'settings.view', icon: <SettingsOutlinedIcon /> },
+  { label: 'Profile', path: '/profile', group: 'Account', icon: <AccountCircleOutlinedIcon /> },
   { label: 'AI Assistant', path: '/ai', group: 'Account', permission: 'ai.generate', optionalFeature: 'ai', icon: <AutoAwesomeOutlinedIcon /> },
 ];
 

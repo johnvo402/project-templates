@@ -1,0 +1,7 @@
+import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { MatCardModule } from '@angular/material/card';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
+import type { OrderStatusReport } from '../report.models';
+
+@Component({ selector:'app-order-status-report', standalone:true, imports:[MatCardModule,MatProgressBarModule], changeDetection:ChangeDetectionStrategy.OnPush, styles:[`mat-card{height:100%;border-radius:16px}mat-card-content{padding:20px}h2,p{margin:0}p{margin:4px 0 16px;color:var(--mat-sys-on-surface-variant)}.item{display:grid;gap:7px;margin:16px 0}.label{display:flex;justify-content:space-between;gap:12px}.empty{text-align:center;padding:32px;color:var(--mat-sys-on-surface-variant)}`], template:`<mat-card appearance="outlined"><mat-card-content><h2>Orders by status</h2><p>Current order distribution.</p>@for(row of rows();track row.status){<div class="item"><span class="label"><span>{{row.status}}</span><strong>{{row.count}}</strong></span><mat-progress-bar mode="determinate" [value]="percent(row.count)"/></div>}@empty{<div class="empty">No order status data yet.</div>}</mat-card-content></mat-card>` })
+export class OrderStatusReportComponent { readonly rows=input.required<OrderStatusReport[]>(); readonly total=computed(()=>this.rows().reduce((sum,row)=>sum+row.count,0)); percent(count:number){return this.total()?count/this.total()*100:0;} }
