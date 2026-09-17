@@ -6,7 +6,7 @@ import { PaginationResponse } from '../../core/api/api.models';
 import { AuthSessionService } from '../../core/auth/auth-session.service';
 import { BusinessApiService, Product } from '../business/business-api.service';
 import { BusinessPaginationComponent } from '../business/business-pagination.component';
-import { FILTER_ENABLED, type BusinessListQuery } from '../business/business-query';
+import { FILTER_ENABLED, type BusinessListQuery } from '../../shared/query/business-query';
 import { ProductImage, ProductImagesApiService } from './product-images-api.service';
 
 @Component({

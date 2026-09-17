@@ -10,8 +10,8 @@ import { AsyncStateComponent } from '../../../shared/components/async-state.comp
 import { ConfirmDialogService } from '../../../shared/components/confirm-dialog.service';
 import { PageHeaderComponent } from '../../../shared/components/page-header.component';
 import { NotificationService } from '../../../shared/feedback/notification.service';
+import { FILTER_ENABLED, type BusinessListQuery, type ListFilter } from '../../../shared/query/business-query';
 import { getErrorMessage } from '../../../shared/utils/http-error';
-import { FILTER_ENABLED, type BusinessListQuery, type ListFilter } from '../../business/business-query';
 import { ProductFiltersComponent } from '../components/product-filters.component';
 import { ProductFormDialogComponent } from '../components/product-form-dialog.component';
 import { ProductTableComponent } from '../components/product-table.component';
