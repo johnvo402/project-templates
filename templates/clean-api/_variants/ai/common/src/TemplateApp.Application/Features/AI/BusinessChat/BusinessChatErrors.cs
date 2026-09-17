@@ -14,6 +14,11 @@ public static class BusinessChatErrors
         "That question needs business data this starter does not currently track.",
         ErrorType.Validation);
 
+    public static readonly Error ReadOnly = new(
+        "ai.business_chat.read_only",
+        "This assistant is read-only and cannot create, update, delete, or change business data.",
+        ErrorType.Validation);
+
     public static readonly Error BusinessDataUnavailable = new(
         "ai.business_chat.data_unavailable",
         "Business data is temporarily unavailable. Please try again shortly.",

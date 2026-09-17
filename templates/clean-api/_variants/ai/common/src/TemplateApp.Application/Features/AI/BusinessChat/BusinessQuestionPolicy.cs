@@ -10,7 +10,21 @@ public static class BusinessQuestionPolicy
         "medical", "doctor", "medicine", "health diagnosis", "bệnh", "thuốc", "bác sĩ", "chẩn đoán",
         "politics", "election", "president", "chính trị", "bầu cử", "tổng thống",
         "source code", "programming", "javascript", "python", "c#", "lập trình",
-        "dating", "relationship advice", "tình yêu", "hẹn hò"
+        "dating", "relationship advice", "tình yêu", "hẹn hò",
+        "ignore previous instructions", "ignore all instructions", "system prompt", "hidden instructions", "jailbreak",
+        "bỏ qua hướng dẫn", "bỏ qua chỉ dẫn", "prompt hệ thống"
+    ];
+
+    private static readonly string[] ReadOnlyMutationTerms =
+    [
+        "cancel this order", "cancel order", "create order", "update order",
+        "delete product", "remove product", "update product", "change price", "set price",
+        "adjust stock", "set stock", "disable employee", "enable employee", "change role",
+        "hủy đơn", "huy don", "tạo đơn", "tao don", "cập nhật đơn", "cap nhat don",
+        "xóa sản phẩm", "xoa san pham", "cập nhật sản phẩm", "cap nhat san pham",
+        "đổi giá", "doi gia", "chỉnh giá", "chinh gia", "cập nhật tồn kho", "cap nhat ton kho",
+        "khóa nhân viên", "khoa nhan vien", "mở khóa nhân viên", "mo khoa nhan vien",
+        "đổi vai trò", "doi vai tro"
     ];
 
     private static readonly string[] UnsupportedDataTerms =
@@ -26,15 +40,15 @@ public static class BusinessQuestionPolicy
 
     private static readonly (BusinessQuestionTopic Topic, string[] Terms)[] TopicTerms =
     [
-        (BusinessQuestionTopic.Revenue, ["revenue", "sales", "doanh thu", "bán hàng", "ban hang"]),
-        (BusinessQuestionTopic.Orders, ["order", "orders", "pending", "processing", "completed", "cancelled", "đơn hàng", "don hang", "trạng thái đơn"]),
+        (BusinessQuestionTopic.Revenue, ["revenue", "sales", "turnover", "doanh thu", "doanh số", "doanh so", "bán hàng", "ban hang"]),
+        (BusinessQuestionTopic.Orders, ["order", "orders", "pending", "processing", "completed", "cancelled", "đơn hàng", "don hang", "trạng thái đơn", "đơn chờ", "don cho"]),
         // Match inventory before the broader product terms so questions such as
         // "sản phẩm sắp hết tồn kho" are treated as inventory questions.
-        (BusinessQuestionTopic.Inventory, ["inventory", "stock", "low stock", "out of stock", "tồn kho", "ton kho", "sắp hết", "sap het", "hết hàng"]),
-        (BusinessQuestionTopic.Products, ["product", "products", "best seller", "best-selling", "top product", "sản phẩm", "san pham", "bán chạy", "ban chay"]),
-        (BusinessQuestionTopic.Employees, ["employee", "employees", "staff count", "nhân viên", "nhan vien", "số nhân viên"]),
-        (BusinessQuestionTopic.Operations, ["recent", "trend", "recommend", "recommendation", "improve", "action", "gần đây", "gan day", "xu hướng", "đề xuất", "cải thiện", "nên làm gì"]),
-        (BusinessQuestionTopic.Overview, ["business", "store", "shop", "overview", "performance", "how are we doing", "kinh doanh", "cửa hàng", "cua hang", "tổng quan", "tình hình", "hoạt động"])
+        (BusinessQuestionTopic.Inventory, ["inventory", "stock", "low stock", "out of stock", "restock", "reorder", "tồn kho", "ton kho", "hàng tồn", "hang ton", "kho hàng", "kho hang", "sắp hết", "sap het", "hết hàng"]),
+        (BusinessQuestionTopic.Products, ["product", "products", "best seller", "best-selling", "bestseller", "top product", "sản phẩm", "san pham", "mặt hàng", "mat hang", "bán chạy", "ban chay"]),
+        (BusinessQuestionTopic.Employees, ["employee", "employees", "staff", "workforce", "staff count", "nhân viên", "nhan vien", "nhân sự", "nhan su", "số nhân viên"]),
+        (BusinessQuestionTopic.Operations, ["recent", "trend", "recommend", "recommendation", "improve", "action", "risk", "issue", "attention", "gần đây", "gan day", "xu hướng", "đề xuất", "cải thiện", "rủi ro", "rui ro", "vấn đề", "van de", "cần chú ý", "can chu y", "nên làm gì"]),
+        (BusinessQuestionTopic.Overview, ["business", "store", "shop", "overview", "performance", "business performance", "store performance", "how are we doing", "kinh doanh", "cửa hàng", "cua hang", "tổng quan", "tình hình", "hoạt động", "hiệu quả kinh doanh", "hieu qua kinh doanh"])
     ];
 
     private static readonly string[] FollowUpTerms =
@@ -51,6 +65,9 @@ public static class BusinessQuestionPolicy
 
         if (ContainsAny(normalized, BlockedTerms))
             return Result<BusinessQuestionTopic>.Failure(BusinessChatErrors.OutOfScope);
+
+        if (ContainsAny(normalized, ReadOnlyMutationTerms))
+            return Result<BusinessQuestionTopic>.Failure(BusinessChatErrors.ReadOnly);
 
         if (ContainsAny(normalized, UnsupportedDataTerms))
             return Result<BusinessQuestionTopic>.Failure(BusinessChatErrors.UnsupportedData);
