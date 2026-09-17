@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react';
+import { useCallback, useEffect, useState, type FormEvent, type ReactNode } from 'react';
 import type { ApiResponse, PaginationResponse } from '../../core/api/api-types';
 import { customFetch } from '../../core/api/custom-fetch';
 import { can, type AuthUser } from '../../core/auth/auth-session';
@@ -12,7 +12,7 @@ import {
 } from './business-query';
 import './business.css';
 
-type Section = 'dashboard' | 'orders' | 'products' | 'employees' | 'reports' | 'settings' | 'profile' | 'ai';
+export type BusinessSection = 'dashboard' | 'orders' | 'products' | 'employees' | 'reports' | 'settings' | 'profile';
 type Dashboard = {
   revenueToday: number; revenueThisMonth: number; totalOrders: number; pendingOrders: number;
   totalProducts: number; lowStockProducts: number; totalEmployees: number;
@@ -29,8 +29,8 @@ type StoreSettings = { storeName: string; storeEmail: string; storePhone: string
 
 type Props = {
   user: AuthUser;
+  section: BusinessSection;
   onProfileUpdated: (displayName: string) => void;
-  aiPanel?: ReactNode;
 };
 
 type SortOption = { value: string; label: string };
@@ -71,42 +71,16 @@ function errorMessage(error: unknown) {
   return 'The request could not be completed.';
 }
 
-export function BusinessWorkspace({ user, onProfileUpdated, aiPanel }: Props) {
-  const navigation = useMemo(() => [
-    can(user, 'dashboard.view') && { id: 'dashboard' as const, label: 'Dashboard', group: 'Overview' },
-    can(user, 'orders.view') && { id: 'orders' as const, label: 'Orders', group: 'Sales' },
-    can(user, 'products.view') && { id: 'products' as const, label: 'Products', group: 'Sales' },
-    can(user, 'employees.view') && { id: 'employees' as const, label: 'Employees', group: 'Management' },
-    can(user, 'reports.view') && { id: 'reports' as const, label: 'Reports', group: 'Analytics' },
-    can(user, 'settings.view') && { id: 'settings' as const, label: 'Settings', group: 'System' },
-    { id: 'profile' as const, label: 'Profile', group: 'Account' },
-    aiPanel && can(user, 'ai.generate') && { id: 'ai' as const, label: 'AI Assistant', group: 'Account' },
-  ].filter(Boolean) as { id: Section; label: string; group: string }[], [user, aiPanel]);
-
-  const [section, setSection] = useState<Section>(() => navigation[0]?.id ?? 'profile');
-  const grouped = useMemo(() => navigation.reduce<Record<string, typeof navigation>>((acc, item) => {
-    (acc[item.group] ??= []).push(item); return acc;
-  }, {}), [navigation]);
-
-  return <div className="business-layout">
-    <aside className="business-sidebar">
-      <div className="sidebar-heading"><span className="sidebar-kicker">Mini Store</span><strong>Operations</strong></div>
-      <nav>{Object.entries(grouped).map(([group, items]) => <div className="nav-group" key={group}>
-        <span>{group}</span>
-        {items.map(item => <button key={item.id} className={section === item.id ? 'active' : ''} onClick={() => setSection(item.id)}>{item.label}</button>)}
-      </div>)}</nav>
-    </aside>
-    <section className="business-content">
-      {section === 'dashboard' && <DashboardPanel />}
-      {section === 'products' && <ProductsPanel user={user} />}
-      {section === 'orders' && <OrdersPanel user={user} />}
-      {section === 'employees' && <EmployeesPanel user={user} />}
-      {section === 'reports' && <ReportsPanel />}
-      {section === 'settings' && <SettingsPanel canUpdate={can(user, 'settings.update')} />}
-      {section === 'profile' && <ProfilePage user={user} onProfileUpdated={onProfileUpdated} />}
-      {section === 'ai' && aiPanel}
-    </section>
-  </div>;
+export function BusinessWorkspace({ user, section, onProfileUpdated }: Props) {
+  return <section className="business-content">
+    {section === 'dashboard' && <DashboardPanel />}
+    {section === 'products' && <ProductsPanel user={user} />}
+    {section === 'orders' && <OrdersPanel user={user} />}
+    {section === 'employees' && <EmployeesPanel user={user} />}
+    {section === 'reports' && <ReportsPanel />}
+    {section === 'settings' && <SettingsPanel canUpdate={can(user, 'settings.update')} />}
+    {section === 'profile' && <ProfilePage user={user} onProfileUpdated={onProfileUpdated} />}
+  </section>;
 }
 
 function PageHeader({ eyebrow, title, copy, actions }: { eyebrow: string; title: string; copy: string; actions?: ReactNode }) {

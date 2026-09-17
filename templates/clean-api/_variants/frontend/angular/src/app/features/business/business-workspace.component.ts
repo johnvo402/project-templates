@@ -1,7 +1,8 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { firstValueFrom } from 'rxjs';
+import { ActivatedRoute } from '@angular/router';
+import { Subscription, firstValueFrom } from 'rxjs';
 import { PaginationResponse } from '../../core/api/api.models';
 import { AuthSessionService } from '../../core/auth/auth-session.service';
 import { ProfilePage } from '../profile/profile.page';
@@ -21,7 +22,7 @@ import {
 import { BusinessPaginationComponent } from './business-pagination.component';
 import { FILTER_ENABLED, type BusinessListQuery, type ListFilter } from './business-query';
 
-type Section='dashboard'|'orders'|'products'|'employees'|'reports'|'settings'|'profile';
+export type BusinessSection='dashboard'|'orders'|'products'|'employees'|'reports'|'settings'|'profile';
 type ListSection='products'|'orders'|'employees';
 
 @Component({
@@ -30,19 +31,6 @@ type ListSection='products'|'orders'|'employees';
   imports:[CommonModule,FormsModule,ProfilePage,BusinessPaginationComponent],
   styleUrl:'./business.css',
   template:`
-  <div class="business-layout">
-    <aside class="business-sidebar">
-      <div class="sidebar-heading"><span class="sidebar-kicker">Mini Store</span><strong>Operations</strong></div>
-      <nav>
-        @if(auth.can('dashboard.view')){<div class="nav-group"><span>Overview</span><button [class.active]="section==='dashboard'" (click)="open('dashboard')">Dashboard</button></div>}
-        <div class="nav-group"><span>Sales</span>@if(auth.can('orders.view')){<button [class.active]="section==='orders'" (click)="open('orders')">Orders</button>}@if(auth.can('products.view')){<button [class.active]="section==='products'" (click)="open('products')">Products</button>}</div>
-        @if(auth.can('employees.view')){<div class="nav-group"><span>Management</span><button [class.active]="section==='employees'" (click)="open('employees')">Employees</button></div>}
-        @if(auth.can('reports.view')){<div class="nav-group"><span>Analytics</span><button [class.active]="section==='reports'" (click)="open('reports')">Reports</button></div>}
-        @if(auth.can('settings.view')){<div class="nav-group"><span>System</span><button [class.active]="section==='settings'" (click)="open('settings')">Settings</button></div>}
-        <div class="nav-group"><span>Account</span><button [class.active]="section==='profile'" (click)="open('profile')">Profile</button></div>
-      </nav>
-    </aside>
-
     <section class="business-content">
       @if(error){<div class="panel error-panel">{{error}}</div>}
       @if(loading){<div class="panel muted-panel">Loading data…</div>}
@@ -81,13 +69,12 @@ type ListSection='products'|'orders'|'employees';
         }
         @case('profile'){<header class="page-heading"><div><p class="eyebrow">Account</p><h1>Profile</h1><p>Manage your personal account information.</p></div></header><app-profile-page/>}
       }
-    </section>
-  </div>`
+    </section>`
 })
 export class BusinessWorkspaceComponent implements OnInit,OnDestroy {
-  readonly auth=inject(AuthSessionService); private readonly api=inject(BusinessApiService); private timer?:ReturnType<typeof setInterval>;
+  readonly auth=inject(AuthSessionService); private readonly api=inject(BusinessApiService); private readonly route=inject(ActivatedRoute); private timer?:ReturnType<typeof setInterval>; private routeSubscription?:Subscription;
   readonly roles=['Admin','Manager','Staff']; readonly filterEnabled=FILTER_ENABLED;
-  section:Section='dashboard'; loading=false; error=''; savingAction=false; notice=''; actionError='';
+  section:BusinessSection='profile'; loading=false; error=''; savingAction=false; notice=''; actionError='';
   dashboard?:Dashboard; productPage?:PaginationResponse<Product>; orderPage?:PaginationResponse<Order>; employeePage?:PaginationResponse<Employee>; topProducts:TopProduct[]=[]; orderStatuses:OrderStatusReport[]=[]; settings?:StoreSettings;
   productQuery:BusinessListQuery=this.emptyQuery(); orderQuery:BusinessListQuery=this.emptyQuery(); employeeQuery:BusinessListQuery=this.emptyQuery();
   productKeyword='';productSort='';productActive='';productLowStock=''; orderKeyword='';orderSort='';orderStatusFilter='';orderMinTotal=''; employeeKeyword='';employeeSort='';employeeRoleFilter='';employeeStatusFilter='';
@@ -95,11 +82,10 @@ export class BusinessWorkspaceComponent implements OnInit,OnDestroy {
   showOrderForm=false; orderCustomerName=''; orderCustomerPhone=''; orderItems:OrderItemModel[]=[{productId:'',quantity:1}]; availableProducts:Product[]=[];
   showEmployeeForm=false; employeeDraft:CreateEmployeeModel=this.emptyEmployee();
 
-  ngOnInit(){void this.load('dashboard');this.timer=setInterval(()=>{if(this.section==='dashboard')void this.load('dashboard',true);},30000);}
-  ngOnDestroy(){if(this.timer)clearInterval(this.timer);}
-  open(section:Section){this.section=section;this.clearActionState();void this.load(section);}
+  ngOnInit(){this.routeSubscription=this.route.data.subscribe(data=>{const section=data['section'] as BusinessSection|undefined;if(!section)return;this.section=section;this.clearActionState();void this.load(section);});this.timer=setInterval(()=>{if(this.section==='dashboard')void this.load('dashboard',true);},30000);}
+  ngOnDestroy(){if(this.timer)clearInterval(this.timer);this.routeSubscription?.unsubscribe();}
   refresh(){void this.load(this.section);}
-  async load(section:Section,silent=false){if(section==='profile')return;if(!silent)this.loading=true;this.error='';try{switch(section){case'dashboard':this.dashboard=await firstValueFrom(this.api.getDashboard());break;case'products':this.productPage=await firstValueFrom(this.api.getProducts(this.productQuery));break;case'orders':this.orderPage=await firstValueFrom(this.api.getOrders(this.orderQuery));break;case'employees':this.employeePage=await firstValueFrom(this.api.getEmployees(this.employeeQuery));break;case'reports':[this.topProducts,this.orderStatuses]=await Promise.all([firstValueFrom(this.api.getTopProducts()),firstValueFrom(this.api.getOrderStatuses())]);break;case'settings':this.settings={...await firstValueFrom(this.api.getSettings())};break;}}catch(error){this.error=this.message(error);}finally{if(!silent)this.loading=false;}}
+  async load(section:BusinessSection,silent=false){if(section==='profile')return;if(!silent)this.loading=true;this.error='';try{switch(section){case'dashboard':this.dashboard=await firstValueFrom(this.api.getDashboard());break;case'products':this.productPage=await firstValueFrom(this.api.getProducts(this.productQuery));break;case'orders':this.orderPage=await firstValueFrom(this.api.getOrders(this.orderQuery));break;case'employees':this.employeePage=await firstValueFrom(this.api.getEmployees(this.employeeQuery));break;case'reports':[this.topProducts,this.orderStatuses]=await Promise.all([firstValueFrom(this.api.getTopProducts()),firstValueFrom(this.api.getOrderStatuses())]);break;case'settings':this.settings={...await firstValueFrom(this.api.getSettings())};break;}}catch(error){this.error=this.message(error);}finally{if(!silent)this.loading=false;}}
 
   applyProductFilters(){const filters:ListFilter[]=[];if(this.productActive)filters.push({field:'IsActive',operator:'$eq',value:this.productActive==='true'});if(String(this.productLowStock).trim())filters.push({field:'StockQuantity',operator:'$lte',value:Math.max(0,Number(this.productLowStock))});this.productQuery={...this.productQuery,page:1,keyword:this.clean(this.productKeyword),targets:['Name','Sku'],sort:this.productSort||undefined,filters};void this.load('products');}
   resetProductFilters(){this.productKeyword='';this.productSort='';this.productActive='';this.productLowStock='';this.productQuery={page:1,pageSize:this.productQuery.pageSize};void this.load('products');}
