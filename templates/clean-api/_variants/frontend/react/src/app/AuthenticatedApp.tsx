@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { Navigate, Route, Routes } from 'react-router';
 import type { AuthUser } from '../core/auth/auth-session';
 import { BusinessWorkspace } from '../features/business/BusinessWorkspace';
+import { EmployeesPage } from '../features/employees/pages/EmployeesPage';
 import { OrdersPage } from '../features/orders/pages/OrdersPage';
 import { ProductsPage } from '../features/products/pages/ProductsPage';
 import { AppShell } from '../shared/components/AppShell';
@@ -38,6 +39,9 @@ export function AuthenticatedApp({
         )}
         {navigation.some(item => item.path === '/products') && (
           <Route path="/products" element={<ProductsPage user={user} />} />
+        )}
+        {navigation.some(item => item.path === '/employees') && (
+          <Route path="/employees" element={<EmployeesPage user={user} />} />
         )}
 
         {navigation

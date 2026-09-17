@@ -33,7 +33,7 @@ export const appNavigation: readonly AppNavigationItem[] = [
   { label: 'Orders', path: '/orders', group: 'Sales', permission: 'orders.view', icon: <ReceiptLongOutlinedIcon /> },
   { label: 'Products', path: '/products', group: 'Sales', permission: 'products.view', icon: <Inventory2OutlinedIcon /> },
   { label: 'Product Images', path: '/products/images', group: 'Sales', permission: 'products.view', optionalFeature: 'product-images', icon: <ImageOutlinedIcon /> },
-  { label: 'Employees', path: '/employees', group: 'Management', permission: 'employees.view', section: 'employees', icon: <GroupsOutlinedIcon /> },
+  { label: 'Employees', path: '/employees', group: 'Management', permission: 'employees.view', icon: <GroupsOutlinedIcon /> },
   { label: 'Reports', path: '/reports', group: 'Analytics', permission: 'reports.view', section: 'reports', icon: <BarChartOutlinedIcon /> },
   { label: 'Settings', path: '/settings', group: 'System', permission: 'settings.view', section: 'settings', icon: <SettingsOutlinedIcon /> },
   { label: 'Profile', path: '/profile', group: 'Account', section: 'profile', icon: <AccountCircleOutlinedIcon /> },
