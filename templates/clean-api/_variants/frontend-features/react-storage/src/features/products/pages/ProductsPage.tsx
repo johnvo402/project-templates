@@ -5,12 +5,12 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import type { AuthUser } from '../../../core/auth/auth-session';
 import { can } from '../../../core/auth/auth-session';
-import { type BusinessListQuery, type ListFilter } from '../../../shared/query/business-query';
-import { AsyncState } from '../../../shared/components/AsyncState';
-import { ConfirmDialog } from '../../../shared/components/ConfirmDialog';
-import { PageHeader } from '../../../shared/components/PageHeader';
-import { useNotifications } from '../../../shared/feedback/NotificationProvider';
-import { getErrorMessage } from '../../../shared/utils/http-error';
+import { type ListQuery, type ListFilter } from '../../../core/api/list-query';
+import { AsyncState } from '../../../components/AsyncState';
+import { ConfirmDialog } from '../../../components/ConfirmDialog';
+import { PageHeader } from '../../../components/PageHeader';
+import { useNotifications } from '../../../feedback/NotificationProvider';
+import { getErrorMessage } from '../../../core/api/http-error';
 import { productsApi } from '../api/products.api';
 import { ProductFilters } from '../components/ProductFilters';
 import { ProductFormDialog } from '../components/ProductFormDialog';
@@ -21,13 +21,13 @@ type Props = { user: AuthUser };
 type SaveProduct = { product: Product | null; model: ProductModel; image: File | null };
 
 const initialFilters: ProductFilterState = { keyword: '', sort: '', active: '', lowStock: '' };
-const initialQuery: BusinessListQuery = { page: 1, pageSize: 20 };
+const initialQuery: ListQuery = { page: 1, pageSize: 20 };
 const pageSizes = [10, 20, 50, 100];
 
 export function ProductsPage({ user }: Props) {
   const queryClient = useQueryClient();
   const notifications = useNotifications();
-  const [query, setQuery] = useState<BusinessListQuery>(initialQuery);
+  const [query, setQuery] = useState<ListQuery>(initialQuery);
   const [filters, setFilters] = useState<ProductFilterState>(initialFilters);
   const [editing, setEditing] = useState<Product | null>(null);
   const [formOpen, setFormOpen] = useState(false);

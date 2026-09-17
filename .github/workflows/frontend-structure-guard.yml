@@ -1,0 +1,37 @@
+name: frontend-structure-guard
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  shared-free-frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Reject frontend shared catch-all folders
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          mapfile -t shared_dirs < <(
+            find templates/clean-api -type d -name shared -print \
+              | grep -E 'frontend[^/]*/.*src|frontend-app/.*/src' \
+              || true
+          )
+
+          if (( ${#shared_dirs[@]} > 0 )); then
+            printf 'Frontend shared directories are not allowed:\n'
+            printf ' - %s\n' "${shared_dirs[@]}"
+            exit 1
+          fi
+
+          if grep -RInE --include='*.ts' --include='*.tsx' --include='*.js' --include='*.jsx' \
+            "['\"][.][.\/]*shared/" templates/clean-api; then
+            echo 'Frontend source still references a shared catch-all path.'
+            exit 1
+          fi

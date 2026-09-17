@@ -1,6 +1,6 @@
 import type { ApiResponse, PaginationResponse } from '../../../core/api/api-types';
 import { customFetch } from '../../../core/api/custom-fetch';
-import { buildBusinessListUrl, type BusinessListQuery } from '../../../shared/query/business-query';
+import { buildListUrl, type ListQuery } from '../../../core/api/list-query';
 import type { Product, ProductModel } from '../product.models';
 
 async function result<T>(path: string, options?: RequestInit): Promise<T> {
@@ -15,8 +15,8 @@ const json = (method: string, body: unknown): RequestInit => ({
 });
 
 export const productsApi = {
-  list(query: BusinessListQuery) {
-    return result<PaginationResponse<Product>>(buildBusinessListUrl('products', query));
+  list(query: ListQuery) {
+    return result<PaginationResponse<Product>>(buildListUrl('products', query));
   },
   create(model: ProductModel) {
     return customFetch<unknown>('/api/products', json('POST', model));

@@ -8,7 +8,7 @@ import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { map } from 'rxjs';
-import { AuthUser } from '../../core/auth/auth-session.service';
+import { AuthUser } from '../core/auth/auth-session.service';
 import { groupNavigation, visibleNavigation } from '../navigation/app-navigation';
 
 @Component({

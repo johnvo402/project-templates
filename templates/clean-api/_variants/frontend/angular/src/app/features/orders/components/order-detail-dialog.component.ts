@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDividerModule } from '@angular/material/divider';
-import { formatCurrency, formatDate } from '../../../shared/utils/formatters';
+import { formatCurrency, formatDate } from '../../../utils/formatters';
 import type { OrderDetail } from '../order.models';
 
 @Component({

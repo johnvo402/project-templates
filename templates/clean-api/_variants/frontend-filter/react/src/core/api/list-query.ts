@@ -6,7 +6,7 @@ export type ListFilter = {
   value: string | number | boolean;
 };
 
-export type BusinessListQuery = {
+export type ListQuery = {
   page: number;
   pageSize: number;
   keyword?: string;
@@ -17,7 +17,7 @@ export type BusinessListQuery = {
 
 export const FILTER_ENABLED = true;
 
-export function buildBusinessListUrl(resource: 'products' | 'orders' | 'employees', query: BusinessListQuery): string {
+export function buildListUrl(resource: 'products' | 'orders' | 'employees', query: ListQuery): string {
   const params = new URLSearchParams({ page: String(query.page), pageSize: String(query.pageSize) });
   if (query.keyword?.trim()) params.set('keyword', query.keyword.trim());
   if (query.targets?.length) params.set('targets', query.targets.join(','));
@@ -34,9 +34,4 @@ export function buildBusinessListUrl(resource: 'products' | 'orders' | 'employee
   const filterQuery = buildFilterQuery(filterObject);
   const base = `/api/${resource}?${params.toString()}`;
   return filterQuery ? `${base}&${filterQuery}` : base;
-}
-
-export function buildActiveProductsUrl(): string {
-  const filterQuery = buildFilterQuery({ IsActive: { $eq: true } });
-  return `/api/products?page=1&pageSize=100&${filterQuery}`;
 }

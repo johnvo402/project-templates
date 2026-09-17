@@ -158,16 +158,21 @@ Storage-specific code and the Product image picker are generated only when MinIO
 React and Angular use a feature-oriented layout:
 
 ```text
-core/
-  api/
-  auth/
-features/
+app/                  # application composition / shell
+core/                 # API, list-query and auth infrastructure
+components/           # reusable UI
+feedback/             # notifications / user feedback
+utils/                # generic formatting helpers
+features/              # business capabilities
   auth/
   business/
   profile/
-  ai/       # optional
-shared/
+  ai/                  # optional
+pagination.ts
+pagination.css
 ```
+
+There is intentionally no generic `shared/` catch-all. Business behavior stays with its owning feature; only genuinely cross-cutting infrastructure and reusable UI are promoted to focused top-level or `core` concerns.
 
 The workspace includes a permission-aware sidebar and screens for Dashboard, Products, Orders, Employees, Reports, Settings and Profile. AI remains optional. Dashboard data is fetched directly and the Angular workspace refreshes its operational snapshot periodically; Reports are fetched fresh rather than cached.
 
@@ -201,7 +206,7 @@ just docker-up-d
 just docker-up-d api db
 just docker-logs api
 just docker-stop api db
-just docker-restart api
+just docker-restart api db
 just docker-clean
 ```
 

@@ -6,12 +6,12 @@ import { MatSelectModule } from '@angular/material/select';
 import { firstValueFrom } from 'rxjs';
 import { AuthSessionService } from '../../../core/auth/auth-session.service';
 import type { PaginationResponse } from '../../../core/api/api.models';
-import { AsyncStateComponent } from '../../../shared/components/async-state.component';
-import { ConfirmDialogService } from '../../../shared/components/confirm-dialog.service';
-import { PageHeaderComponent } from '../../../shared/components/page-header.component';
-import { NotificationService } from '../../../shared/feedback/notification.service';
-import { FILTER_ENABLED, type BusinessListQuery, type ListFilter } from '../../../shared/query/business-query';
-import { getErrorMessage } from '../../../shared/utils/http-error';
+import { AsyncStateComponent } from '../../../components/async-state.component';
+import { ConfirmDialogService } from '../../../components/confirm-dialog.service';
+import { PageHeaderComponent } from '../../../components/page-header.component';
+import { NotificationService } from '../../../feedback/notification.service';
+import { FILTER_ENABLED, type ListQuery, type ListFilter } from '../../../core/api/list-query';
+import { getErrorMessage } from '../../../core/api/http-error';
 import { ProductFiltersComponent } from '../components/product-filters.component';
 import { ProductFormDialogComponent, type ProductDialogResult } from '../components/product-form-dialog.component';
 import { ProductTableComponent } from '../components/product-table.component';
@@ -50,7 +50,7 @@ export class ProductsPage implements OnInit {
   readonly loading = signal(false);
   readonly error = signal<string | null>(null);
   readonly page = signal<PaginationResponse<Product> | null>(null);
-  query: BusinessListQuery = { page: 1, pageSize: 20 };
+  query: ListQuery = { page: 1, pageSize: 20 };
 
   private readonly api = inject(ProductsApiService);
   private readonly dialog = inject(MatDialog);

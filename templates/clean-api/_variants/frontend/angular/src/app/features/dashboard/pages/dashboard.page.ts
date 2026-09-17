@@ -1,10 +1,10 @@
 import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { Subscription, firstValueFrom, timer } from 'rxjs';
-import { AsyncStateComponent } from '../../../shared/components/async-state.component';
-import { PageHeaderComponent } from '../../../shared/components/page-header.component';
-import { formatCurrency } from '../../../shared/utils/formatters';
-import { getErrorMessage } from '../../../shared/utils/http-error';
+import { AsyncStateComponent } from '../../../components/async-state.component';
+import { PageHeaderComponent } from '../../../components/page-header.component';
+import { formatCurrency } from '../../../utils/formatters';
+import { getErrorMessage } from '../../../core/api/http-error';
 import { DashboardMetricCardComponent } from '../components/dashboard-metric-card.component';
 import { RecentOrdersPanelComponent } from '../components/recent-orders-panel.component';
 import { TopProductsPanelComponent } from '../components/top-products-panel.component';

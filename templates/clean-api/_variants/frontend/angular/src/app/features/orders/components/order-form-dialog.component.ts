@@ -5,7 +5,7 @@ import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/materia
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
-import { formatCurrency } from '../../../shared/utils/formatters';
+import { formatCurrency } from '../../../utils/formatters';
 import type { CreateOrderModel, ProductOption } from '../order.models';
 
 export type OrderFormDialogData = { products: ProductOption[] };

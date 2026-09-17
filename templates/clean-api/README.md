@@ -238,15 +238,18 @@ This keeps stock/order reads straightforward, Dashboard fresh, and report totals
 React and Angular use a feature-oriented split:
 
 ```text
-core/
-  api/
-  auth/
-features/
+app/                  # application composition / shell
+core/                 # API, list-query and auth infrastructure
+components/           # reusable UI
+feedback/             # notifications / user feedback
+utils/                # generic formatting/error helpers
+features/              # business capabilities
   auth/
   business/
   profile/
-  ai/       # optional
-shared/
+  ai/                  # optional
+pagination.ts
+pagination.css
 ```
 
 The starter UI includes:

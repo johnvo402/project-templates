@@ -21,8 +21,8 @@ import {
 import { useTheme } from '@mui/material/styles';
 import { useMemo, useState, type ReactNode } from 'react';
 import { useLocation, useNavigate } from 'react-router';
-import type { AppNavigationItem } from '../../app/app-navigation';
-import type { AuthUser } from '../../core/auth/auth-session';
+import type { AppNavigationItem } from '../app/app-navigation';
+import type { AuthUser } from '../core/auth/auth-session';
 
 const drawerWidth = 264;
 

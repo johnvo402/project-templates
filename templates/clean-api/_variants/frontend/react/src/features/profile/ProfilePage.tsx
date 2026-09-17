@@ -3,10 +3,10 @@ import { Box, Button, Paper, TextField, Typography } from '@mui/material';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import type { AuthUser } from '../../core/auth/auth-session';
-import { AsyncState } from '../../shared/components/AsyncState';
-import { PageHeader } from '../../shared/components/PageHeader';
-import { useNotifications } from '../../shared/feedback/NotificationProvider';
-import { getErrorMessage } from '../../shared/utils/http-error';
+import { AsyncState } from '../../components/AsyncState';
+import { PageHeader } from '../../components/PageHeader';
+import { useNotifications } from '../../feedback/NotificationProvider';
+import { getErrorMessage } from '../../core/api/http-error';
 import { profileApi } from './profile.api';
 
 type Props = { user: AuthUser; onProfileUpdated: (displayName: string) => void };

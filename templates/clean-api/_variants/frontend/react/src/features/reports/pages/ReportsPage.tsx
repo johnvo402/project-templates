@@ -1,9 +1,9 @@
 import RefreshOutlinedIcon from '@mui/icons-material/RefreshOutlined';
 import { Box, Button } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
-import { AsyncState } from '../../../shared/components/AsyncState';
-import { PageHeader } from '../../../shared/components/PageHeader';
-import { getErrorMessage } from '../../../shared/utils/http-error';
+import { AsyncState } from '../../../components/AsyncState';
+import { PageHeader } from '../../../components/PageHeader';
+import { getErrorMessage } from '../../../core/api/http-error';
 import { reportsApi } from '../api/reports.api';
 import { OrderStatusReportCard } from '../components/OrderStatusReportCard';
 import { TopProductsReportCard } from '../components/TopProductsReportCard';

@@ -145,7 +145,7 @@ templates/clean-api/_variants/frontend/angular/src/app/features/users/user-api.s
 templates/clean-api/_variants/frontend/angular/src/app/features/users/user.models.ts
 templates/clean-api/_variants/frontend/angular/src/app/features/users/user.store.ts
 templates/clean-api/_variants/frontend/angular/src/app/features/users/users.page.ts
-templates/clean-api/_variants/frontend/angular/src/app/shared/components/app-shell.component.ts
+templates/clean-api/_variants/frontend/angular/src/app/components/app-shell.component.ts
 templates/clean-api/_variants/frontend/angular/src/index.html
 templates/clean-api/_variants/frontend/angular/src/main.ts
 templates/clean-api/_variants/frontend/angular/src/styles.css
@@ -172,7 +172,7 @@ templates/clean-api/_variants/frontend/react/src/features/users/UsersPage.tsx
 templates/clean-api/_variants/frontend/react/src/features/users/user.api.ts
 templates/clean-api/_variants/frontend/react/src/features/users/user.models.ts
 templates/clean-api/_variants/frontend/react/src/main.tsx
-templates/clean-api/_variants/frontend/react/src/shared/components/AppShell.tsx
+templates/clean-api/_variants/frontend/react/src/components/AppShell.tsx
 templates/clean-api/_variants/frontend/react/src/styles.css
 templates/clean-api/_variants/frontend/react/tsconfig.json
 templates/clean-api/_variants/frontend/react/vite.config.ts

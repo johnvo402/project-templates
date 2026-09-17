@@ -1,5 +1,5 @@
 import { Box, Chip, Dialog, DialogActions, DialogContent, DialogTitle, Divider, Button, Stack, Typography } from '@mui/material';
-import { formatCurrency, formatDate } from '../../../shared/utils/formatters';
+import { formatCurrency, formatDate } from '../../../utils/formatters';
 import type { OrderDetail } from '../order.models';
 
 type Props = {

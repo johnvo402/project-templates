@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, input, output } from '@angular/core
 import { MatButtonModule } from '@angular/material/button';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatTableModule } from '@angular/material/table';
-import { formatCurrency, formatDate } from '../../../shared/utils/formatters';
+import { formatCurrency, formatDate } from '../../../utils/formatters';
 import type { Product } from '../product.models';
 
 @Component({

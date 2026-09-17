@@ -1,6 +1,6 @@
 import { Avatar, Box, Button, Chip, MenuItem, TextField, Typography } from '@mui/material';
 import { DataGrid, type GridColDef } from '@mui/x-data-grid';
-import { formatDate } from '../../../shared/utils/formatters';
+import { formatDate } from '../../../utils/formatters';
 import { EMPLOYEE_ROLES, type Employee, type EmployeeRole } from '../employee.models';
 
 type Props = {
