@@ -30,7 +30,7 @@ export type NavigationOptions = {
 
 export const appNavigation: readonly AppNavigationItem[] = [
   { label: 'Dashboard', path: '/dashboard', group: 'Overview', permission: 'dashboard.view', section: 'dashboard', icon: <DashboardOutlinedIcon /> },
-  { label: 'Orders', path: '/orders', group: 'Sales', permission: 'orders.view', section: 'orders', icon: <ReceiptLongOutlinedIcon /> },
+  { label: 'Orders', path: '/orders', group: 'Sales', permission: 'orders.view', icon: <ReceiptLongOutlinedIcon /> },
   { label: 'Products', path: '/products', group: 'Sales', permission: 'products.view', icon: <Inventory2OutlinedIcon /> },
   { label: 'Product Images', path: '/products/images', group: 'Sales', permission: 'products.view', optionalFeature: 'product-images', icon: <ImageOutlinedIcon /> },
   { label: 'Employees', path: '/employees', group: 'Management', permission: 'employees.view', section: 'employees', icon: <GroupsOutlinedIcon /> },
