@@ -2,7 +2,7 @@
 
 Opinionated **.NET 8+ DDD + Clean Architecture + Vertical Slice/CQRS** templates by JohnVo.
 
-The generated backend keeps Domain framework-light, uses Minimal APIs + Mediator, and follows practical VietWash-style conventions: **Command Models**, **Query Projections**, Specification + UnitOfWork, repository mapping expressions, Result/API envelopes, FluentValidation, permission authorization, and feature-oriented frontends.
+The generated backend keeps Domain framework-light, uses Minimal APIs + Mediator, and follows practical Filter-style conventions: **Command Models**, **Query Projections**, Specification + UnitOfWork, repository mapping expressions, Result/API envelopes, FluentValidation, permission authorization, and feature-oriented frontends.
 
 The default sample is a small **Mini Store Admin** rather than a toy Todo app. It gives a generated project realistic aggregates, cross-feature queries, permissions, file uploads, reporting, pagination, concurrency handling, and a usable React/Angular workspace without turning the starter into a full ERP.
 
@@ -63,7 +63,7 @@ Roles are `Admin`, `Manager`, and `Staff`, while API/UI authorization is enforce
 
 Dashboard and Reports read operational data directly. Orders, Dashboard and Reports are intentionally **not wired to Redis caching**, avoiding stale stock/order/report data. Redis remains an optional infrastructure capability for application-specific extensions.
 
-## VietWash-style application conventions
+## Filter-style application conventions
 
 Read and write shapes are intentionally separated:
 

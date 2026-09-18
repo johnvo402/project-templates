@@ -57,7 +57,7 @@ internal sealed class EfReadRepository<TEntity>(AppDbContext dbContext) : IReadR
         CancellationToken cancellationToken = default)
         where TResult : class
     {
-        // VietWash-style read path: build SQL-translatable filter/sort expressions
+        // Filter-style read path: build SQL-translatable filter/sort expressions
         // against the entity query from the Projection mapping, then project last.
         var source = SpecificationEvaluator.GetQuery(Set.AsQueryable(), specification, forceNoTracking: true);
         source = QueryableQueryEvaluator.ApplyFiltering(source, query, mappingExpression);

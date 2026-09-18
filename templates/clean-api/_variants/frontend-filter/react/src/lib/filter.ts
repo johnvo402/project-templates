@@ -47,7 +47,7 @@ function appendValue(entries: string[], key: string, value: unknown): void {
 }
 
 /**
- * Builds VietWash-style LHS bracket filters, for example:
+ * Builds Filter-style LHS bracket filters, for example:
  * filter[Title][$containsi]=wash
  * filter[$or][0][IsCompleted][$eq]=true
  * filter[$or][1][Title][$startswith]=VIP

@@ -92,7 +92,7 @@
       "type": "parameter",
       "datatype": "bool",
       "defaultValue": "false",
-      "description": "Add VietWash-style LHS-bracket filtering, keyword search, sorting, page/cursor pagination."
+      "description": "Add Filter-style LHS-bracket filtering, keyword search, sorting, page/cursor pagination."
     },
     "minio": {
       "type": "parameter",

@@ -46,7 +46,7 @@ function appendValue(entries: string[], key: string, value: unknown): void {
   entries.push(`${key}=${encodeURIComponent(String(value as QueryValue))}`);
 }
 
-/** Builds a VietWash-style `filter[Field][$operator]=value` query string. */
+/** Builds a Filter-style `filter[Field][$operator]=value` query string. */
 export function buildFilterQuery(filterObject: FilterInput): string {
   const entries: string[] = [];
   appendValue(entries, 'filter', filterObject);
