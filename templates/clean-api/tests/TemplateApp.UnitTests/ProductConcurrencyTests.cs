@@ -37,7 +37,11 @@ public sealed class ProductConcurrencyTests
         await firstContext.SaveChangesAsync();
 
         staleWriter.AdjustStock(-2);
+//#if (redis)
+        await using var staleUnitOfWork = new UnitOfWork(secondContext, null!);
+//#else
         await using var staleUnitOfWork = new UnitOfWork(secondContext);
+//#endif
 
         var exception = await Assert.ThrowsAsync<PersistenceConcurrencyException>(
             () => staleUnitOfWork.SaveChangesAsync());
