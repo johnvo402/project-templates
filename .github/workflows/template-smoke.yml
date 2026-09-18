@@ -2,6 +2,8 @@ name: template-smoke
 
 on:
   push:
+  pull_request:
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -31,10 +33,10 @@ jobs:
       - name: Reject dotenv loading and Docker aliases in backend C#
         shell: bash
         run: |
-          matches="$(grep -RInE --include='*.cs' '(DotEnvLoader|AUTO_MIGRATE|DB_CONNECTION|JWT_(ISSUER|AUDIENCE|KEY|EXPIRATION_MINUTES)|REFRESH_(TOKEN_DAYS|COOKIE_NAME)|REDIS_(CONNECTION|INSTANCE_NAME)|MINIO_(PUBLIC_ENDPOINT|PUBLIC_SECURE|ACCESS_KEY|SECRET_KEY|BUCKET|PRESIGNED_EXPIRY_SECONDS)|GEMINI_(API_KEY|MODEL)|OPENAI_(API_KEY|MODEL))' templates/clean-api/src templates/clean-api/_variants || true)"
+          matches="$(grep -RInE --include='*.cs' '(DotEnvLoader|AUTO_MIGRATE|DB_CONNECTION|JWT_(ISSUER|AUDIENCE|KEY|EXPIRATION_MINUTES)|REFRESH_(TOKEN_DAYS|COOKIE_NAME)|REDIS_(CONNECTION|INSTANCE_NAME)|MINIO_(PUBLIC_ENDPOINT|PUBLIC_SECURE|ACCESS_KEY|SECRET_KEY|BUCKET|PRESIGNED_EXPIRY_SECONDS)|GEMINI_(API_KEY|MODEL)|OPENAI_(API_KEY|MODEL)|OTEL_(SERVICE_NAME|EXPORTER_OTLP_))' templates/clean-api/src templates/clean-api/_variants || true)"
           if [ -n "$matches" ]; then
             echo "$matches"
-            echo "The backend must not load .env files or use Docker-facing aliases; keep aliases in .env/Compose and use canonical ASP.NET configuration in C#." >&2
+            echo "The backend must not load .env files or use Docker-facing aliases; keep aliases in .env/Compose and use canonical ASP.NET/OpenTelemetry configuration." >&2
             exit 1
           fi
 
@@ -53,69 +55,113 @@ jobs:
             filter: false
             docker: false
             verifyRename: false
-          - label: net9 default
-            project: SmokeDefault
-            sdk: 9.0.x
-            arguments: --framework net9.0
+
+          - label: net10 postgres redis openai otel
+            project: SmokeNet10OpenAi
+            sdk: 10.0.x
+            arguments: --framework net10.0 --database postgresql --redis true --minio false --ai openai --filter false --otel true --docker false
             frontend: false
             filter: false
             docker: false
             verifyRename: false
-          - label: net9 filter only
-            project: SmokeFilterOnly
+
+          - label: net9 all optional off
+            project: SmokeNet9Off
             sdk: 9.0.x
-            arguments: --framework net9.0 --filter true --minio false --ai none
+            arguments: --framework net9.0 --database sqlserver --redis false --minio false --ai none --filter false --otel false --docker false
+            frontend: false
+            filter: false
+            docker: false
+            verifyRename: false
+
+          - label: net9 sqlserver redis filter
+            project: SmokeFilterRedis
+            sdk: 9.0.x
+            arguments: --framework net9.0 --database sqlserver --redis true --minio false --ai none --filter true --otel false --docker false
             frontend: false
             filter: true
             docker: false
             verifyRename: false
-          - label: net9 minio only
-            project: SmokeMinioOnly
+
+          - label: net9 postgres minio
+            project: SmokeMinio
             sdk: 9.0.x
-            arguments: --framework net9.0 --filter false --minio true --ai none
+            arguments: --framework net9.0 --database postgresql --redis false --minio true --ai none --filter false --otel false --docker false
             frontend: false
             filter: false
             docker: false
             verifyRename: false
-          - label: net9 full stack
-            project: SmokeFull
+
+          - label: net9 opentelemetry no docker
+            project: SmokeOpenTelemetry
+            sdk: 9.0.x
+            arguments: --framework net9.0 --database postgresql --redis false --minio false --ai none --filter false --otel true --docker false
+            frontend: false
+            filter: false
+            docker: false
+            verifyRename: false
+
+          - label: net9 docker no opentelemetry
+            project: SmokeDockerNoOtel
+            sdk: 9.0.x
+            arguments: --framework net9.0 --database sqlserver --redis false --minio false --ai none --filter false --otel false --docker true
+            frontend: false
+            filter: false
+            docker: true
+            verifyRename: false
+
+          - label: net9 react full stack
+            project: SmokeReactFull
             sdk: 9.0.x
             arguments: --framework net9.0 --frontend react --database postgresql --redis true --minio true --ai gemini --filter true --otel true --docker true
             frontend: true
             filter: true
             docker: true
             verifyRename: true
-          - label: net9 angular
-            project: SmokeAngular
+
+          - label: net9 react openai
+            project: SmokeReactOpenAi
             sdk: 9.0.x
-            arguments: --framework net9.0 --frontend angular --database postgresql --minio true --ai none --filter true
+            arguments: --framework net9.0 --frontend react --database sqlserver --redis false --minio false --ai openai --filter false --otel false --docker false
+            frontend: true
+            filter: false
+            docker: false
+            verifyRename: true
+
+          - label: net9 angular storage filter
+            project: SmokeAngularStorage
+            sdk: 9.0.x
+            arguments: --framework net9.0 --frontend angular --database postgresql --redis false --minio true --ai none --filter true --otel false --docker false
             frontend: true
             filter: true
             docker: false
             verifyRename: true
-          - label: net9 filter disabled
-            project: SmokeNoFilter
+
+          - label: net9 angular openai docker
+            project: SmokeAngularOpenAi
             sdk: 9.0.x
-            arguments: --framework net9.0 --filter false --ai none --otel false --docker true
-            frontend: false
+            arguments: --framework net9.0 --frontend angular --database sqlserver --redis true --minio true --ai openai --filter false --otel true --docker true
+            frontend: true
             filter: false
             docker: true
-            verifyRename: false
-          - label: net9 opentelemetry
-            project: SmokeOpenTelemetry
-            sdk: 9.0.x
-            arguments: --framework net9.0 --otel true --ai none
-            frontend: false
-            filter: false
-            docker: false
-            verifyRename: false
+            verifyRename: true
+
           - label: net8 sqlserver
             project: SmokeNet8SqlServer
             sdk: 8.0.x
-            arguments: --framework net8.0 --database sqlserver --ai none
+            arguments: --framework net8.0 --database sqlserver --redis false --minio false --ai none --filter false --otel false --docker false
             frontend: false
             filter: false
             docker: false
+            verifyRename: false
+
+          - label: net8 postgres optional stack
+            project: SmokeNet8Options
+            sdk: 8.0.x
+            arguments: --framework net8.0 --database postgresql --redis true --minio true --ai openai --filter true --otel true --docker true
+            frontend: false
+            filter: true
+            docker: true
             verifyRename: false
 
     steps:
@@ -195,13 +241,51 @@ jobs:
         shell: bash
         run: |
           if [ "${{ matrix.docker }}" = "true" ]; then
-            if [ ! -f "$SMOKE_OUTPUT/.env.example" ]; then
-              echo ".env.example was not generated for --docker true." >&2
+            for file in "$SMOKE_OUTPUT/.env.example" "$SMOKE_OUTPUT/.env.production.example" "$SMOKE_OUTPUT/compose.yaml" "$SMOKE_OUTPUT/compose.prod.yaml"; do
+              if [ ! -f "$file" ]; then
+                echo "Docker is enabled but '$file' was not generated." >&2
+                exit 1
+              fi
+            done
+          else
+            if [ -f "$SMOKE_OUTPUT/.env.example" ] || [ -f "$SMOKE_OUTPUT/.env.production.example" ]; then
+              echo "Docker env examples must not be generated when Docker is disabled." >&2
               exit 1
             fi
-          elif [ -f "$SMOKE_OUTPUT/.env.example" ]; then
-            echo ".env.example must not be generated when Docker is disabled." >&2
-            exit 1
+            if find "$SMOKE_OUTPUT" -maxdepth 1 -type f -name 'compose*.y*ml' -print -quit | grep -q .; then
+              echo "Compose files must not be generated when Docker is disabled." >&2
+              exit 1
+            fi
+          fi
+
+      - name: Check AI provider boundary
+        shell: bash
+        run: |
+          if [[ "${{ matrix.arguments }}" == *"--ai none"* ]]; then
+            leaked="$(find "$SMOKE_OUTPUT/src" -type f \( -name 'IAiService.cs' -o -name 'GeminiAiService.cs' -o -name 'OpenAiService.cs' \) -print || true)"
+            if [ -n "$leaked" ]; then
+              echo "$leaked"
+              echo "AI artifacts leaked into an --ai none project." >&2
+              exit 1
+            fi
+          elif [[ "${{ matrix.arguments }}" == *"--ai openai"* ]]; then
+            if ! find "$SMOKE_OUTPUT/src" -type f -name 'OpenAiService.cs' -print -quit | grep -q .; then
+              echo "OpenAI was selected but OpenAiService.cs is missing." >&2
+              exit 1
+            fi
+            if find "$SMOKE_OUTPUT/src" -type f -name 'GeminiAiService.cs' -print -quit | grep -q .; then
+              echo "Gemini implementation leaked into an OpenAI project." >&2
+              exit 1
+            fi
+          else
+            if ! find "$SMOKE_OUTPUT/src" -type f -name 'GeminiAiService.cs' -print -quit | grep -q .; then
+              echo "Gemini is expected but GeminiAiService.cs is missing." >&2
+              exit 1
+            fi
+            if find "$SMOKE_OUTPUT/src" -type f -name 'OpenAiService.cs' -print -quit | grep -q .; then
+              echo "OpenAI implementation leaked into a Gemini project." >&2
+              exit 1
+            fi
           fi
 
       - name: Check OpenTelemetry boundary
@@ -227,13 +311,6 @@ jobs:
             done
 
             if [ "${{ matrix.docker }}" = "true" ]; then
-              for file in "$SMOKE_OUTPUT/.env.example" "$SMOKE_OUTPUT/.env.production.example" "$SMOKE_OUTPUT/compose.yaml" "$SMOKE_OUTPUT/compose.prod.yaml"; do
-                if [ ! -f "$file" ]; then
-                  echo "Expected Docker + OpenTelemetry artifact '$file' was not generated." >&2
-                  exit 1
-                fi
-              done
-
               for name in OTEL_SERVICE_NAME OTEL_EXPORTER_OTLP_ENDPOINT OTEL_EXPORTER_OTLP_PROTOCOL OTEL_EXPORTER_OTLP_HEADERS; do
                 if ! grep -q "$name" "$SMOKE_OUTPUT/.env.example" || ! grep -q "$name" "$SMOKE_OUTPUT/.env.production.example"; then
                   echo "Docker + OpenTelemetry is missing '$name' from env examples." >&2
@@ -249,11 +326,6 @@ jobs:
               if [ -n "$bundled" ]; then
                 echo "$bundled"
                 echo "OpenTelemetry must not generate a bundled observability service." >&2
-                exit 1
-              fi
-            else
-              if [ -f "$SMOKE_OUTPUT/.env.example" ] || find "$SMOKE_OUTPUT" -maxdepth 1 -type f -name 'compose*.y*ml' -print -quit | grep -q .; then
-                echo "OpenTelemetry without Docker must not generate Docker/.env artifacts." >&2
                 exit 1
               fi
             fi
@@ -309,7 +381,7 @@ jobs:
         run: dotnet build "$SMOKE_OUTPUT/${{ matrix.project }}.sln" -c Release --no-restore
 
       - name: Test backend
-        run: dotnet test "$SMOKE_OUTPUT/${{ matrix.project }}.sln" -c Release --no-build
+        run: dotnet test "$SMOKE_OUTPUT/${{ matrix.project }}.sln" -c Release --no-build --logger "console;verbosity=normal"
 
       - name: Install frontend dependencies
         if: ${{ matrix.frontend }}
