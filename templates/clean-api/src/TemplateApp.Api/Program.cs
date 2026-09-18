@@ -2,9 +2,6 @@ using Mediator;
 using TemplateApp.Api.Authentication;
 using TemplateApp.Api.Endpoints;
 using TemplateApp.Api.Errors;
-//#if (otel)
-using TemplateApp.Api.Observability;
-//#endif
 using TemplateApp.Application;
 using TemplateApp.Application.Common.Behaviors;
 using TemplateApp.Infrastructure;
@@ -12,7 +9,7 @@ using TemplateApp.Infrastructure;
 var builder = WebApplication.CreateBuilder(args);
 
 //#if (otel)
-builder.Services.AddOpenTelemetryObservability(builder.Configuration, builder.Environment);
+builder.AddServiceDefaults();
 //#endif
 
 builder.Services.AddProblemDetails();
@@ -52,9 +49,13 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi().AllowAnonymous();
 }
 
+//#if (otel)
+app.MapDefaultEndpoints();
+//#else
 app.MapGet("/health", () => Results.Ok(new { status = "ok" }))
     .WithName("Health")
     .AllowAnonymous();
+//#endif
 
 app.MapAuthEndpoints();
 app.MapProfileEndpoints();
