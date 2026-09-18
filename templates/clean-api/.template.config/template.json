@@ -119,6 +119,12 @@
           "description": "Do not generate AI provider integration"
         }
       ]
+    },
+    "otel": {
+      "type": "parameter",
+      "datatype": "bool",
+      "defaultValue": "false",
+      "description": "Add OpenTelemetry traces, metrics and logs exported through OTLP."
     }
   },
   "sources": [
@@ -286,6 +292,11 @@
       "source": "_variants/ai/openai",
       "target": "./",
       "condition": "(ai == \"openai\")"
+    },
+    {
+      "source": "_variants/observability/opentelemetry",
+      "target": "./",
+      "condition": "otel"
     },
     {
       "source": "_variants/docker/common",

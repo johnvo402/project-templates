@@ -101,6 +101,14 @@ jobs:
             filter: false
             docker: false
             verifyRename: false
+          - label: net9 opentelemetry
+            project: SmokeOpenTelemetry
+            sdk: 9.0.x
+            arguments: --framework net9.0 --otel true --ai none
+            frontend: false
+            filter: false
+            docker: false
+            verifyRename: false
           - label: net8 sqlserver
             project: SmokeNet8SqlServer
             sdk: 8.0.x
@@ -194,6 +202,42 @@ jobs:
           elif [ -f "$SMOKE_OUTPUT/.env.example" ]; then
             echo ".env.example must not be generated when Docker is disabled." >&2
             exit 1
+          fi
+
+      - name: Check OpenTelemetry boundary
+        shell: bash
+        run: |
+          if [[ "${{ matrix.arguments }}" == *"--otel true"* ]]; then
+            registration="$SMOKE_OUTPUT/src/${{ matrix.project }}.Api/Observability/OpenTelemetryRegistration.cs"
+            if [ ! -f "$registration" ]; then
+              echo "OpenTelemetry is enabled but OpenTelemetryRegistration.cs was not generated." >&2
+              exit 1
+            fi
+
+            for package in \
+              OpenTelemetry.Extensions.Hosting \
+              OpenTelemetry.Exporter.OpenTelemetryProtocol \
+              OpenTelemetry.Instrumentation.AspNetCore \
+              OpenTelemetry.Instrumentation.Http \
+              OpenTelemetry.Instrumentation.Runtime; do
+              if ! grep -RFl "PackageReference Include=\"$package\"" "$SMOKE_OUTPUT/src" | grep -q .; then
+                echo "OpenTelemetry is enabled but package '$package' is missing." >&2
+                exit 1
+              fi
+            done
+
+            if [ -f "$SMOKE_OUTPUT/.env.example" ] || find "$SMOKE_OUTPUT" -maxdepth 1 -type f -name 'compose*.y*ml' -print -quit | grep -q .; then
+              echo "OpenTelemetry must not implicitly generate Docker/.env artifacts." >&2
+              exit 1
+            fi
+          else
+            leaked="$(find "$SMOKE_OUTPUT/src" -type f -iname '*OpenTelemetry*' -print || true)"
+            leaked_refs="$(grep -RIn --include='*.csproj' 'OpenTelemetry\.' "$SMOKE_OUTPUT/src" || true)"
+            if [ -n "$leaked$leaked_refs" ]; then
+              printf '%s\n%s\n' "$leaked" "$leaked_refs"
+              echo "OpenTelemetry artifacts leaked into an --otel false generated project." >&2
+              exit 1
+            fi
           fi
 
       - name: Check filter-disabled output

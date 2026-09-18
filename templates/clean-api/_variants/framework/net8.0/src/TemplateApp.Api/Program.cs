@@ -2,11 +2,18 @@ using Mediator;
 using TemplateApp.Api.Authentication;
 using TemplateApp.Api.Endpoints;
 using TemplateApp.Api.Errors;
+//#if (otel)
+using TemplateApp.Api.Observability;
+//#endif
 using TemplateApp.Application;
 using TemplateApp.Application.Common.Behaviors;
 using TemplateApp.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
+
+//#if (otel)
+builder.Services.AddOpenTelemetryObservability(builder.Configuration, builder.Environment);
+//#endif
 
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();

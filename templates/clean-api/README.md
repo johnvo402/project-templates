@@ -33,6 +33,7 @@ The template ships a practical Mini Store / admin domain instead of a Todo sampl
 --minio true|false
 --ai gemini|openai|none
 --filter true|false
+--otel true|false
 --docker true|false
 ```
 
@@ -106,6 +107,15 @@ Database__AutoMigrate
 ```
 
 OpenAI follows the same boundary. `OPENAI_API_KEY` / `OPENAI_MODEL` are Docker inputs and become `OpenAI__ApiKey` / `OpenAI__Model` for ASP.NET Core.
+
+When generated with `--otel true`, OpenTelemetry remains independent from Docker. No collector, Grafana stack or Compose service is generated. Point the API at an external OTLP endpoint with standard OpenTelemetry configuration:
+
+```text
+OTEL_SERVICE_NAME=TemplateApp.Api
+OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317
+```
+
+The default OTel setup exports traces, metrics and logs; instruments ASP.NET Core and outgoing `HttpClient` traffic; and emits .NET runtime metrics. EF Core instrumentation is not enabled by default because its instrumentation package is prerelease.
 
 ## Mini Store domain
 
@@ -334,6 +344,7 @@ The template smoke workflow generates, restores, builds and tests representative
 - .NET 9 full stack with React, PostgreSQL, Redis infrastructure, MinIO, AI, filters and Docker
 - .NET 9 Angular
 - .NET 9 filter-disabled
+- .NET 9 OpenTelemetry without Docker
 - .NET 8 + SQL Server
 
 CI also rejects legacy Todo starter artifacts, business-cache dependencies in Orders/Dashboard/Reports, invalid environment boundaries and untransformed template names.
