@@ -173,6 +173,12 @@ jobs:
         with:
           dotnet-version: ${{ matrix.sdk }}
 
+      - name: Setup .NET 10 for Aspire AppHost
+        if: ${{ contains(matrix.arguments, '--otel true') && matrix.sdk != '10.0.x' }}
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+
       - name: Setup Node
         if: ${{ matrix.frontend }}
         uses: actions/setup-node@v7
@@ -288,61 +294,101 @@ jobs:
             fi
           fi
 
-      - name: Check OpenTelemetry boundary
+      - name: Check Aspire observability boundary
         shell: bash
         run: |
+          apphost="$SMOKE_OUTPUT/src/${{ matrix.project }}.AppHost/${{ matrix.project }}.AppHost.csproj"
+          defaults="$SMOKE_OUTPUT/src/${{ matrix.project }}.ServiceDefaults/${{ matrix.project }}.ServiceDefaults.csproj"
+          extensions="$SMOKE_OUTPUT/src/${{ matrix.project }}.ServiceDefaults/Extensions.cs"
+
           if [[ "${{ matrix.arguments }}" == *"--otel true"* ]]; then
-            registration="$SMOKE_OUTPUT/src/${{ matrix.project }}.Api/Observability/OpenTelemetryRegistration.cs"
-            if [ ! -f "$registration" ]; then
-              echo "OpenTelemetry is enabled but OpenTelemetryRegistration.cs was not generated." >&2
+            for file in "$apphost" "$defaults" "$extensions"; do
+              if [ ! -f "$file" ]; then
+                echo "Aspire observability is enabled but '$file' was not generated." >&2
+                exit 1
+              fi
+            done
+
+            if ! grep -q 'Aspire.AppHost.Sdk/13.5.4' "$apphost"; then
+              echo "Aspire AppHost SDK 13.5.4 is missing." >&2
+              exit 1
+            fi
+
+            if ! grep -q '<TargetFramework>net10.0</TargetFramework>' "$apphost"; then
+              echo "Aspire AppHost must target net10.0." >&2
               exit 1
             fi
 
             for package in \
+              Microsoft.Extensions.Http.Resilience \
+              Microsoft.Extensions.ServiceDiscovery \
               OpenTelemetry.Extensions.Hosting \
               OpenTelemetry.Exporter.OpenTelemetryProtocol \
               OpenTelemetry.Instrumentation.AspNetCore \
               OpenTelemetry.Instrumentation.Http \
               OpenTelemetry.Instrumentation.Runtime; do
-              if ! grep -RFl "PackageReference Include=\"$package\"" "$SMOKE_OUTPUT/src" | grep -q .; then
-                echo "OpenTelemetry is enabled but package '$package' is missing." >&2
+              if ! grep -q "PackageReference Include=\"$package\"" "$defaults"; then
+                echo "ServiceDefaults is missing package '$package'." >&2
                 exit 1
               fi
             done
 
-            if [ "${{ matrix.docker }}" = "true" ]; then
-              for name in OTEL_SERVICE_NAME OTEL_EXPORTER_OTLP_ENDPOINT OTEL_EXPORTER_OTLP_PROTOCOL OTEL_EXPORTER_OTLP_HEADERS; do
-                if ! grep -q "$name" "$SMOKE_OUTPUT/.env.example" || ! grep -q "$name" "$SMOKE_OUTPUT/.env.production.example"; then
-                  echo "Docker + OpenTelemetry is missing '$name' from env examples." >&2
-                  exit 1
-                fi
-                if ! grep -q "$name" "$SMOKE_OUTPUT/compose.yaml" || ! grep -q "$name" "$SMOKE_OUTPUT/compose.prod.yaml"; then
-                  echo "Docker + OpenTelemetry is not forwarding '$name' into the API container." >&2
-                  exit 1
-                fi
-              done
-
-              bundled="$(grep -RInE '(^|[[:space:]])(otel-collector|grafana|tempo|jaeger|prometheus|loki):([[:space:]]|$)' "$SMOKE_OUTPUT"/compose*.y*ml || true)"
-              if [ -n "$bundled" ]; then
-                echo "$bundled"
-                echo "OpenTelemetry must not generate a bundled observability service." >&2
-                exit 1
-              fi
+            api_program="$SMOKE_OUTPUT/src/${{ matrix.project }}.Api/Program.cs"
+            if ! grep -q 'builder.AddServiceDefaults();' "$api_program" || ! grep -q 'app.MapDefaultEndpoints();' "$api_program"; then
+              echo "API is not wired to Aspire ServiceDefaults." >&2
+              exit 1
             fi
-          else
-            leaked="$(find "$SMOKE_OUTPUT/src" -type f -iname '*OpenTelemetry*' -print || true)"
-            leaked_refs="$(grep -RIn --include='*.csproj' 'OpenTelemetry\.' "$SMOKE_OUTPUT/src" || true)"
-            if [ -n "$leaked$leaked_refs" ]; then
-              printf '%s\n%s\n' "$leaked" "$leaked_refs"
-              echo "OpenTelemetry artifacts leaked into an --otel false generated project." >&2
+
+            if find "$SMOKE_OUTPUT/src" -type f -name 'OpenTelemetryRegistration.cs' -print -quit | grep -q .; then
+              echo "Legacy OpenTelemetryRegistration.cs must not be generated after Aspire migration." >&2
+              exit 1
+            fi
+
+            if ! grep -q "${{ matrix.project }}.AppHost" "$SMOKE_OUTPUT/${{ matrix.project }}.sln" || \
+               ! grep -q "${{ matrix.project }}.ServiceDefaults" "$SMOKE_OUTPUT/${{ matrix.project }}.sln"; then
+              echo "Aspire projects are missing from the generated solution." >&2
               exit 1
             fi
 
             if [ "${{ matrix.docker }}" = "true" ]; then
-              leaked_docker="$(grep -RInE 'OTEL_(SERVICE_NAME|EXPORTER_OTLP_)' "$SMOKE_OUTPUT"/.env*.example "$SMOKE_OUTPUT"/compose*.y*ml 2>/dev/null || true)"
+              if ! grep -q 'aspire-dashboard:' "$SMOKE_OUTPUT/compose.yaml" || \
+                 ! grep -q 'mcr.microsoft.com/dotnet/aspire-dashboard:latest' "$SMOKE_OUTPUT/compose.yaml"; then
+                echo "Docker + Aspire must generate the local Aspire Dashboard service." >&2
+                exit 1
+              fi
+
+              if ! grep -q 'http://aspire-dashboard:18889' "$SMOKE_OUTPUT/compose.yaml" || \
+                 ! grep -q 'OTEL_EXPORTER_OTLP_ENDPOINT=http://aspire-dashboard:18889' "$SMOKE_OUTPUT/.env.example"; then
+                echo "Docker API is not configured to export OTLP to the Aspire Dashboard." >&2
+                exit 1
+              fi
+
+              if grep -q 'aspire-dashboard:' "$SMOKE_OUTPUT/compose.prod.yaml"; then
+                echo "Production Compose must not bundle the development Aspire Dashboard." >&2
+                exit 1
+              fi
+
+              for name in OTEL_SERVICE_NAME OTEL_EXPORTER_OTLP_ENDPOINT OTEL_EXPORTER_OTLP_PROTOCOL OTEL_EXPORTER_OTLP_HEADERS; do
+                if ! grep -q "$name" "$SMOKE_OUTPUT/.env.production.example" || ! grep -q "$name" "$SMOKE_OUTPUT/compose.prod.yaml"; then
+                  echo "Production Docker + OpenTelemetry is missing '$name' passthrough." >&2
+                  exit 1
+                fi
+              done
+            fi
+          else
+            leaked_projects="$(find "$SMOKE_OUTPUT/src" -maxdepth 1 -type d \( -name '*.AppHost' -o -name '*.ServiceDefaults' \) -print || true)"
+            leaked_refs="$(grep -RIn --include='*.csproj' -E '(Aspire\.AppHost\.Sdk|OpenTelemetry\.|Microsoft\.Extensions\.ServiceDiscovery|Microsoft\.Extensions\.Http\.Resilience)' "$SMOKE_OUTPUT/src" || true)"
+            if [ -n "$leaked_projects$leaked_refs" ]; then
+              printf '%s\n%s\n' "$leaked_projects" "$leaked_refs"
+              echo "Aspire/OpenTelemetry artifacts leaked into an --otel false project." >&2
+              exit 1
+            fi
+
+            if [ "${{ matrix.docker }}" = "true" ]; then
+              leaked_docker="$(grep -RInE '(aspire-dashboard|OTEL_(SERVICE_NAME|EXPORTER_OTLP_))' "$SMOKE_OUTPUT"/.env*.example "$SMOKE_OUTPUT"/compose*.y*ml 2>/dev/null || true)"
               if [ -n "$leaked_docker" ]; then
                 echo "$leaked_docker"
-                echo "OpenTelemetry Docker configuration leaked into an --otel false generated project." >&2
+                echo "Aspire/OpenTelemetry Docker configuration leaked into an --otel false project." >&2
                 exit 1
               fi
             fi
