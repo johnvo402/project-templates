@@ -96,10 +96,10 @@ jobs:
           - label: net9 filter disabled
             project: SmokeNoFilter
             sdk: 9.0.x
-            arguments: --framework net9.0 --filter false --ai none
+            arguments: --framework net9.0 --filter false --ai none --otel false --docker true
             frontend: false
             filter: false
-            docker: false
+            docker: true
             verifyRename: false
           - label: net9 opentelemetry
             project: SmokeOpenTelemetry
