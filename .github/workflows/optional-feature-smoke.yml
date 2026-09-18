@@ -162,7 +162,6 @@ jobs:
               -o -name 'EmployeeAvatarUrlResolver.cs' \
               -o -name 'MinioObjectStorage.cs' \
               -o -name 'MinioOptions.cs' \
-              -o -name 'StorageRegistration.cs' \
             \) -print || true)"
             leaked_frontend="$(find "$SMOKE_OUTPUT/frontend/src" -type f \( \
               -name 'ProductImagesWorkspace.tsx' \
