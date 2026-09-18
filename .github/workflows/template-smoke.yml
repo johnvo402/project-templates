@@ -264,6 +264,21 @@ jobs:
             fi
           fi
 
+      - name: Validate generated Docker Compose
+        if: ${{ matrix.docker }}
+        shell: bash
+        run: |
+          files=(-f "$SMOKE_OUTPUT/compose.yaml")
+          if [ -f "$SMOKE_OUTPUT/compose.minio.yaml" ]; then
+            files+=(-f "$SMOKE_OUTPUT/compose.minio.yaml")
+          fi
+          if [ -f "$SMOKE_OUTPUT/compose.ai.yaml" ]; then
+            files+=(-f "$SMOKE_OUTPUT/compose.ai.yaml")
+          fi
+
+          docker compose --env-file "$SMOKE_OUTPUT/.env.example" "${files[@]}" config >/dev/null
+          docker compose --env-file "$SMOKE_OUTPUT/.env.production.example" -f "$SMOKE_OUTPUT/compose.prod.yaml" config >/dev/null
+
       - name: Check AI provider boundary
         shell: bash
         run: |
