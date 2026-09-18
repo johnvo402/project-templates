@@ -33,12 +33,7 @@ public static class OpenTelemetryRegistration
                 .AddHttpClientInstrumentation()
                 .AddRuntimeInstrumentation()
                 .AddOtlpExporter())
-            .WithLogging(logging =>
-            {
-                logging.IncludeFormattedMessage = true;
-                logging.IncludeScopes = true;
-                logging.AddOtlpExporter();
-            });
+.WithLogging(logging => logging.AddOtlpExporter());
 
         return services;
     }
