@@ -143,7 +143,9 @@ OTEL_SERVICE_NAME=MyApp.Api
 OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317
 ```
 
-OpenTelemetry is independent from `--docker`: enabling it does not create `.env.example`, Docker services, Grafana, Tempo, Jaeger or an OpenTelemetry Collector.
+OpenTelemetry is independent from `--docker`: `--otel true` never enables Docker or creates an observability stack. When both `--docker true --otel true` are selected, Docker only forwards `OTEL_SERVICE_NAME`, `OTEL_EXPORTER_OTLP_ENDPOINT`, `OTEL_EXPORTER_OTLP_PROTOCOL` and `OTEL_EXPORTER_OTLP_HEADERS` into the API container; no Collector, Grafana, Tempo, Jaeger, Prometheus or Loki service is generated.
+
+For Docker, the OTLP endpoint must be reachable **from inside the API container**. For example, a collector running on Docker Desktop's host is commonly reachable as `http://host.docker.internal:4317`; a remote collector should use its normal network hostname or URL.
 
 ## MinIO: avatar and product image
 
@@ -236,7 +238,7 @@ Repository CI generates and builds representative combinations including:
 - .NET 8 SQL Server backend
 - .NET 9 default backend
 - filter-disabled backend
-- React full stack with PostgreSQL + Redis + MinIO + Gemini + LHS filtering + Docker
+- React full stack with PostgreSQL + Redis + MinIO + Gemini + LHS filtering + OpenTelemetry + Docker
 - Angular with PostgreSQL + MinIO + LHS filtering
 
 Guards reject legacy Todo starter artifacts, filter infrastructure when filtering is disabled, backend `.env` alias leakage, and cache dependencies inside Orders/Dashboard/Reports.

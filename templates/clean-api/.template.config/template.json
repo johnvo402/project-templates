@@ -304,6 +304,11 @@
       "condition": "docker"
     },
     {
+      "source": "_variants/docker/optional/opentelemetry-env",
+      "target": "./",
+      "condition": "docker && otel"
+    },
+    {
       "source": "_variants/docker/framework/net8.0",
       "target": "./",
       "condition": "docker && (framework == \"net8.0\")"

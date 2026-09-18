@@ -117,6 +117,8 @@ OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317
 
 The default OTel setup exports traces, metrics and logs; instruments ASP.NET Core and outgoing `HttpClient` traffic; and emits .NET runtime metrics. EF Core instrumentation is not enabled by default because its instrumentation package is prerelease.
 
+If Docker is also enabled, the generated env examples expose `OTEL_SERVICE_NAME`, `OTEL_EXPORTER_OTLP_ENDPOINT`, `OTEL_EXPORTER_OTLP_PROTOCOL` and `OTEL_EXPORTER_OTLP_HEADERS`, and Compose forwards them into the API container. Docker still does not generate an OpenTelemetry Collector or any Grafana/Tempo/Jaeger/Prometheus/Loki service. The configured endpoint must be reachable from inside the API container; on Docker Desktop a collector running on the host is commonly addressed with `http://host.docker.internal:4317`.
+
 ## Mini Store domain
 
 ### Dashboard
@@ -341,7 +343,7 @@ The template smoke workflow generates, restores, builds and tests representative
 
 - .NET 10 default
 - .NET 9 default
-- .NET 9 full stack with React, PostgreSQL, Redis infrastructure, MinIO, AI, filters and Docker
+- .NET 9 full stack with React, PostgreSQL, Redis infrastructure, MinIO, AI, filters, OpenTelemetry and Docker
 - .NET 9 Angular
 - .NET 9 filter-disabled
 - .NET 9 OpenTelemetry without Docker
