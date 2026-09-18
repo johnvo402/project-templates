@@ -80,7 +80,7 @@ jobs:
           - label: net9 full stack
             project: SmokeFull
             sdk: 9.0.x
-            arguments: --framework net9.0 --frontend react --database postgresql --redis true --minio true --ai gemini --filter true --docker true
+            arguments: --framework net9.0 --frontend react --database postgresql --redis true --minio true --ai gemini --filter true --otel true --docker true
             frontend: true
             filter: true
             docker: true
@@ -96,7 +96,15 @@ jobs:
           - label: net9 filter disabled
             project: SmokeNoFilter
             sdk: 9.0.x
-            arguments: --framework net9.0 --filter false --ai none
+            arguments: --framework net9.0 --filter false --ai none --otel false --docker true
+            frontend: false
+            filter: false
+            docker: true
+            verifyRename: false
+          - label: net9 opentelemetry
+            project: SmokeOpenTelemetry
+            sdk: 9.0.x
+            arguments: --framework net9.0 --otel true --ai none
             frontend: false
             filter: false
             docker: false
@@ -194,6 +202,78 @@ jobs:
           elif [ -f "$SMOKE_OUTPUT/.env.example" ]; then
             echo ".env.example must not be generated when Docker is disabled." >&2
             exit 1
+          fi
+
+      - name: Check OpenTelemetry boundary
+        shell: bash
+        run: |
+          if [[ "${{ matrix.arguments }}" == *"--otel true"* ]]; then
+            registration="$SMOKE_OUTPUT/src/${{ matrix.project }}.Api/Observability/OpenTelemetryRegistration.cs"
+            if [ ! -f "$registration" ]; then
+              echo "OpenTelemetry is enabled but OpenTelemetryRegistration.cs was not generated." >&2
+              exit 1
+            fi
+
+            for package in \
+              OpenTelemetry.Extensions.Hosting \
+              OpenTelemetry.Exporter.OpenTelemetryProtocol \
+              OpenTelemetry.Instrumentation.AspNetCore \
+              OpenTelemetry.Instrumentation.Http \
+              OpenTelemetry.Instrumentation.Runtime; do
+              if ! grep -RFl "PackageReference Include=\"$package\"" "$SMOKE_OUTPUT/src" | grep -q .; then
+                echo "OpenTelemetry is enabled but package '$package' is missing." >&2
+                exit 1
+              fi
+            done
+
+            if [ "${{ matrix.docker }}" = "true" ]; then
+              for file in "$SMOKE_OUTPUT/.env.example" "$SMOKE_OUTPUT/.env.production.example" "$SMOKE_OUTPUT/compose.yaml" "$SMOKE_OUTPUT/compose.prod.yaml"; do
+                if [ ! -f "$file" ]; then
+                  echo "Expected Docker + OpenTelemetry artifact '$file' was not generated." >&2
+                  exit 1
+                fi
+              done
+
+              for name in OTEL_SERVICE_NAME OTEL_EXPORTER_OTLP_ENDPOINT OTEL_EXPORTER_OTLP_PROTOCOL OTEL_EXPORTER_OTLP_HEADERS; do
+                if ! grep -q "$name" "$SMOKE_OUTPUT/.env.example" || ! grep -q "$name" "$SMOKE_OUTPUT/.env.production.example"; then
+                  echo "Docker + OpenTelemetry is missing '$name' from env examples." >&2
+                  exit 1
+                fi
+                if ! grep -q "$name" "$SMOKE_OUTPUT/compose.yaml" || ! grep -q "$name" "$SMOKE_OUTPUT/compose.prod.yaml"; then
+                  echo "Docker + OpenTelemetry is not forwarding '$name' into the API container." >&2
+                  exit 1
+                fi
+              done
+
+              bundled="$(grep -RInE '(^|[[:space:]])(otel-collector|grafana|tempo|jaeger|prometheus|loki):([[:space:]]|$)' "$SMOKE_OUTPUT"/compose*.y*ml || true)"
+              if [ -n "$bundled" ]; then
+                echo "$bundled"
+                echo "OpenTelemetry must not generate a bundled observability service." >&2
+                exit 1
+              fi
+            else
+              if [ -f "$SMOKE_OUTPUT/.env.example" ] || find "$SMOKE_OUTPUT" -maxdepth 1 -type f -name 'compose*.y*ml' -print -quit | grep -q .; then
+                echo "OpenTelemetry without Docker must not generate Docker/.env artifacts." >&2
+                exit 1
+              fi
+            fi
+          else
+            leaked="$(find "$SMOKE_OUTPUT/src" -type f -iname '*OpenTelemetry*' -print || true)"
+            leaked_refs="$(grep -RIn --include='*.csproj' 'OpenTelemetry\.' "$SMOKE_OUTPUT/src" || true)"
+            if [ -n "$leaked$leaked_refs" ]; then
+              printf '%s\n%s\n' "$leaked" "$leaked_refs"
+              echo "OpenTelemetry artifacts leaked into an --otel false generated project." >&2
+              exit 1
+            fi
+
+            if [ "${{ matrix.docker }}" = "true" ]; then
+              leaked_docker="$(grep -RInE 'OTEL_(SERVICE_NAME|EXPORTER_OTLP_)' "$SMOKE_OUTPUT"/.env*.example "$SMOKE_OUTPUT"/compose*.y*ml 2>/dev/null || true)"
+              if [ -n "$leaked_docker" ]; then
+                echo "$leaked_docker"
+                echo "OpenTelemetry Docker configuration leaked into an --otel false generated project." >&2
+                exit 1
+              fi
+            fi
           fi
 
       - name: Check filter-disabled output

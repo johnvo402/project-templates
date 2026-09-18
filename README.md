@@ -29,6 +29,7 @@ dotnet new jv-api -n MyApp \
   --minio true \
   --ai gemini \
   --filter true \
+  --otel true \
   --docker true
 ```
 
@@ -41,6 +42,7 @@ Options:
 - `--minio true|false` (default `false`)
 - `--ai gemini|openai|none` (default `gemini`)
 - `--filter true|false` (default `false`)
+- `--otel true|false` (default `false`) — OpenTelemetry traces, metrics and logs via OTLP
 - `--docker true|false` (default `false`)
 
 Always included: DDD primitives, Specification, Repository/ReadOnlyRepository, UnitOfWork, Mediator, Minimal APIs, JWT + rotating HttpOnly refresh token, permission policies, FluentValidation, startup migrations, profile management, Mini Store business modules, CI, `justfile`, and Git initialization.
@@ -127,6 +129,23 @@ Minio__Endpoint
 ```
 
 Frontend-specific environment variables belong to the frontend project rather than the backend configuration pipeline.
+
+## OpenTelemetry
+
+`--otel true` adds vendor-neutral OpenTelemetry observability to the API without enabling Docker or generating collector/Compose files.
+
+The generated API exports **traces, metrics and logs** through OTLP and includes stable instrumentation for ASP.NET Core requests, outgoing `HttpClient` calls and .NET runtime metrics. Health-check requests are excluded from tracing noise. Database-specific EF Core instrumentation is intentionally not included by default while its OpenTelemetry instrumentation package remains prerelease.
+
+Configure any external collector or observability backend with standard OpenTelemetry environment variables, for example:
+
+```text
+OTEL_SERVICE_NAME=MyApp.Api
+OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317
+```
+
+OpenTelemetry is independent from `--docker`: `--otel true` never enables Docker or creates an observability stack. When both `--docker true --otel true` are selected, Docker only forwards `OTEL_SERVICE_NAME`, `OTEL_EXPORTER_OTLP_ENDPOINT`, `OTEL_EXPORTER_OTLP_PROTOCOL` and `OTEL_EXPORTER_OTLP_HEADERS` into the API container; no Collector, Grafana, Tempo, Jaeger, Prometheus or Loki service is generated.
+
+For Docker, the OTLP endpoint must be reachable **from inside the API container**. For example, a collector running on Docker Desktop's host is commonly reachable as `http://host.docker.internal:4317`; a remote collector should use its normal network hostname or URL.
 
 ## MinIO: avatar and product image
 
@@ -219,7 +238,7 @@ Repository CI generates and builds representative combinations including:
 - .NET 8 SQL Server backend
 - .NET 9 default backend
 - filter-disabled backend
-- React full stack with PostgreSQL + Redis + MinIO + Gemini + LHS filtering + Docker
+- React full stack with PostgreSQL + Redis + MinIO + Gemini + LHS filtering + OpenTelemetry + Docker
 - Angular with PostgreSQL + MinIO + LHS filtering
 
 Guards reject legacy Todo starter artifacts, filter infrastructure when filtering is disabled, backend `.env` alias leakage, and cache dependencies inside Orders/Dashboard/Reports.
