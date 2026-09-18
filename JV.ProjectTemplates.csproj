@@ -3,16 +3,21 @@
     <TargetFramework>net8.0</TargetFramework>
     <PackageType>Template</PackageType>
     <PackageId>JohnVo.ProjectTemplates</PackageId>
-    <Version>1.8.9</Version>
+    <Version>1.0.0</Version>
     <Authors>JohnVo</Authors>
-    <Description>JohnVo .NET 8+ DDD + Clean Architecture + Vertical Slice/CQRS template with always-on Specification and UnitOfWork, Minimal APIs, permission auth, optional Redis/MinIO, optional LHS filtering, Orval frontends, and pluggable AI with Gemini by default, CI tests, tag-only GHCR publishing, and production compose rollback tags, separate EF migrations tooling, and just task automation, automatic fail-fast startup migrations, service-targetable Docker just recipes, always-on FluentValidation, VietWash-style Models/Projections with repository mapping expressions, profile/avatar flows, paginated Todos, Docker Compose environment alias mapping, and polished feature-oriented React/Angular starter code.</Description>
-    <PackageTags>dotnet-new;template;clean-architecture;vertical-slice;ddd;specification;unit-of-work;redis;minio;ai;gemini;openai;filtering;pagination;minimal-api;jwt;refresh-token;orval;github-actions;ghcr;docker-compose;just;ef-migrations;auto-migrate;feature-sliced-frontend</PackageTags>
+    <Description>JohnVo .NET 8+ DDD + Clean Architecture + Vertical Slice/CQRS project template with a realistic Mini Store starter, Specification + UnitOfWork, Minimal APIs, permission auth, FluentValidation, EF migrations, optional Redis/MinIO, LHS filtering, OpenTelemetry/OTLP, Gemini/OpenAI, React/Angular, Docker and GitHub Actions.</Description>
+    <PackageTags>dotnet-new;template;clean-architecture;vertical-slice;ddd;specification;unit-of-work;redis;minio;opentelemetry;otlp;ai;gemini;openai;filtering;pagination;minimal-api;jwt;refresh-token;orval;github-actions;nuget;docker-compose;just;ef-migrations;auto-migrate;feature-sliced-frontend</PackageTags>
+    <RepositoryUrl>https://github.com/johnvo402/project-templates</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageProjectUrl>https://github.com/johnvo402/project-templates</PackageProjectUrl>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
     <IncludeContentInPack>true</IncludeContentInPack>
     <ContentTargetFolders>content</ContentTargetFolders>
     <NoDefaultExcludes>true</NoDefaultExcludes>
   </PropertyGroup>
   <ItemGroup>
     <Content Include="templates/**/*" Exclude="templates/**/bin/**;templates/**/obj/**" />
+    <None Include="README.md" Pack="true" PackagePath="/" />
     <Compile Remove="**/*" />
   </ItemGroup>
 </Project>

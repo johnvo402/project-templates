@@ -251,5 +251,11 @@ Guards reject legacy Todo starter artifacts, filter infrastructure when filterin
 
 ```bash
 dotnet pack JV.ProjectTemplates.csproj -c Release
-dotnet new install ./bin/Release/JohnVo.ProjectTemplates.1.8.9.nupkg
+dotnet new install ./bin/Release/JohnVo.ProjectTemplates.1.0.0.nupkg
 ```
+
+## NuGet publish
+
+The `nuget-publish` GitHub Actions workflow can be started manually or by pushing a semantic-version tag such as `v1.0.0`. It packs the template, installs the produced `.nupkg`, generates a full-stack smoke project, builds/tests the backend, builds the frontend, and only then pushes to NuGet.org.
+
+Configure repository secret `NUGET_API_KEY` with a NuGet.org API key that can publish `JohnVo.ProjectTemplates`.
