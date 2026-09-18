@@ -251,5 +251,11 @@ Guards reject legacy Todo starter artifacts, filter infrastructure when filterin
 
 ```bash
 dotnet pack JV.ProjectTemplates.csproj -c Release
-dotnet new install ./bin/Release/JohnVo.ProjectTemplates.1.8.9.nupkg
+dotnet new install ./bin/Release/JohnVo.ProjectTemplates.1.0.0.nupkg
 ```
+
+## NuGet publish
+
+The `nuget-publish` GitHub Actions workflow can be started manually or by pushing a semantic-version tag such as `v1.0.0`. It packs the template, installs the produced `.nupkg`, generates a full-stack smoke project, builds/tests the backend, builds the frontend, and only then pushes to NuGet.org.
+
+Publishing uses **NuGet Trusted Publishing (GitHub OIDC)** rather than a long-lived API key. Configure a nuget.org Trusted Publishing policy for repository owner `johnvo402`, repository `project-templates`, and workflow file `nuget-publish.yml`. Leave the policy environment empty unless the workflow is later moved behind a GitHub Environment. In GitHub Actions, add repository variable `NUGET_USER` containing the nuget.org username/profile name that owns the policy. No `NUGET_API_KEY` secret is required.

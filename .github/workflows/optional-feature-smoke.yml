@@ -2,6 +2,8 @@ name: optional-feature-smoke
 
 on:
   push:
+  pull_request:
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -18,26 +20,53 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - label: react optional off
-            project: OptionalReactOff
+          - label: react base
+            project: OptionalReactBase
             arguments: --framework net9.0 --frontend react --minio false --ai none --filter false
             minio: false
             ai: none
-          - label: angular optional off
-            project: OptionalAngularOff
+
+          - label: react ai
+            project: OptionalReactAi
+            arguments: --framework net9.0 --frontend react --minio false --ai gemini --filter false
+            minio: false
+            ai: gemini
+
+          - label: react storage
+            project: OptionalReactStorage
+            arguments: --framework net9.0 --frontend react --minio true --ai none --filter false
+            minio: true
+            ai: none
+
+          - label: react ai storage
+            project: OptionalReactAiStorage
+            arguments: --framework net9.0 --frontend react --minio true --ai openai --filter false
+            minio: true
+            ai: openai
+
+          - label: angular base
+            project: OptionalAngularBase
             arguments: --framework net9.0 --frontend angular --minio false --ai none --filter false
             minio: false
             ai: none
-          - label: react optional on
-            project: OptionalReactOn
-            arguments: --framework net9.0 --frontend react --minio true --ai gemini --filter false
-            minio: true
+
+          - label: angular ai
+            project: OptionalAngularAi
+            arguments: --framework net9.0 --frontend angular --minio false --ai gemini --filter false
+            minio: false
             ai: gemini
-          - label: angular optional on
-            project: OptionalAngularOn
-            arguments: --framework net9.0 --frontend angular --minio true --ai gemini --filter false
+
+          - label: angular storage
+            project: OptionalAngularStorage
+            arguments: --framework net9.0 --frontend angular --minio true --ai none --filter false
             minio: true
-            ai: gemini
+            ai: none
+
+          - label: angular ai storage
+            project: OptionalAngularAiStorage
+            arguments: --framework net9.0 --frontend angular --minio true --ai openai --filter false
+            minio: true
+            ai: openai
 
     steps:
       - name: Checkout
@@ -47,6 +76,12 @@ jobs:
         uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 9.0.x
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          package-manager-cache: false
 
       - name: Generate project
         shell: bash
@@ -122,7 +157,11 @@ jobs:
               -o -name 'ProductImageModel.cs' \
               -o -name 'Product.storage.cs' \
               -o -name 'ProfileAvatarEndpointRegistration.cs' \
-              -o -iname '*Minio*' \
+              -o -name 'GeneratedOptionalEndpointRegistration.Minio.cs' \
+              -o -name 'IEmployeeAvatarUrlResolver.cs' \
+              -o -name 'EmployeeAvatarUrlResolver.cs' \
+              -o -name 'MinioObjectStorage.cs' \
+              -o -name 'MinioOptions.cs' \
             \) -print || true)"
             leaked_frontend="$(find "$SMOKE_OUTPUT/frontend/src" -type f \( \
               -name 'ProductImagesWorkspace.tsx' \
@@ -145,6 +184,39 @@ jobs:
       - name: Check AI boundary
         shell: bash
         run: |
+          case "${{ matrix.ai }}" in
+            gemini)
+              if ! find "$SMOKE_OUTPUT/src" -type f -name 'GeminiAiService.cs' -print -quit | grep -q .; then
+                echo "Gemini is enabled but GeminiAiService.cs is missing." >&2
+                exit 1
+              fi
+              if find "$SMOKE_OUTPUT/src" -type f -name 'OpenAiService.cs' -print -quit | grep -q .; then
+                echo "OpenAI implementation leaked into a Gemini project." >&2
+                exit 1
+              fi
+              ;;
+            openai)
+              if ! find "$SMOKE_OUTPUT/src" -type f -name 'OpenAiService.cs' -print -quit | grep -q .; then
+                echo "OpenAI is enabled but OpenAiService.cs is missing." >&2
+                exit 1
+              fi
+              if find "$SMOKE_OUTPUT/src" -type f -name 'GeminiAiService.cs' -print -quit | grep -q .; then
+                echo "Gemini implementation leaked into an OpenAI project." >&2
+                exit 1
+              fi
+              ;;
+            none)
+              leaked_backend="$(find "$SMOKE_OUTPUT/src" -type f \( -name 'IAiService.cs' -o -name 'AiEndpointRegistration.cs' -o -iname '*Gemini*' -o -name 'OpenAiService.cs' \) -print || true)"
+              leaked_frontend="$(find "$SMOKE_OUTPUT/frontend/src" -type f \( -name 'AiPanel.tsx' -o -name 'ai.page.ts' -o -name 'ai-api.service.ts' -o -name 'ai.store.ts' -o -name 'ai.api.ts' \) -print || true)"
+              leaked_wiring="$(grep -RInE --exclude-dir=node_modules '(showAi|ai\.generate|features[/\\]ai)' "$SMOKE_OUTPUT/frontend/src" || true)"
+              if [ -n "$leaked_backend$leaked_frontend$leaked_wiring" ]; then
+                printf '%s\n%s\n%s\n' "$leaked_backend" "$leaked_frontend" "$leaked_wiring"
+                echo "AI artifacts leaked into an --ai none generated project." >&2
+                exit 1
+              fi
+              ;;
+          esac
+
           if [ "${{ matrix.ai }}" != "none" ]; then
             for name in IAiService.cs AiEndpointRegistration.cs; do
               if ! find "$SMOKE_OUTPUT/src" -type f -name "$name" -print -quit | grep -q .; then
@@ -156,13 +228,21 @@ jobs:
               echo "AI is enabled but the frontend AI feature is missing." >&2
               exit 1
             fi
-          else
-            leaked_backend="$(find "$SMOKE_OUTPUT/src" -type f \( -name 'IAiService.cs' -o -name 'AiEndpointRegistration.cs' -o -name 'GenerateAiText*' -o -iname '*Gemini*' -o -iname '*OpenAi*' \) -print || true)"
-            leaked_frontend="$(find "$SMOKE_OUTPUT/frontend/src" -type f \( -name 'AiPanel.tsx' -o -name 'ai.page.ts' -o -name 'ai-api.service.ts' -o -name 'ai.store.ts' -o -name 'ai.api.ts' \) -print || true)"
-            leaked_wiring="$(grep -RInE --exclude-dir=node_modules '(showAi|ai\.generate|features[/\\]ai)' "$SMOKE_OUTPUT/frontend/src" || true)"
-            if [ -n "$leaked_backend$leaked_frontend$leaked_wiring" ]; then
-              printf '%s\n%s\n%s\n' "$leaked_backend" "$leaked_frontend" "$leaked_wiring"
-              echo "AI artifacts leaked into an --ai none generated project." >&2
-              exit 1
-            fi
           fi
+
+      - name: Restore backend
+        run: dotnet restore "$SMOKE_OUTPUT/${{ matrix.project }}.sln"
+
+      - name: Build backend
+        run: dotnet build "$SMOKE_OUTPUT/${{ matrix.project }}.sln" -c Release --no-restore
+
+      - name: Test backend
+        run: dotnet test "$SMOKE_OUTPUT/${{ matrix.project }}.sln" -c Release --no-build --logger "console;verbosity=normal"
+
+      - name: Install frontend dependencies
+        working-directory: ${{ env.SMOKE_OUTPUT }}/frontend
+        run: npm install
+
+      - name: Build frontend
+        working-directory: ${{ env.SMOKE_OUTPUT }}/frontend
+        run: npm run build

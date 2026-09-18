@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Caching.Distributed;
 using TemplateApp.Application.Abstractions.Persistence;
+using TemplateApp.Application.Common.Exceptions;
 using TemplateApp.Infrastructure.Persistence.Repositories;
 
 namespace TemplateApp.Infrastructure.Persistence;
@@ -59,10 +60,10 @@ public sealed class UnitOfWork(
     }
 
     public async Task SaveAsync(CancellationToken cancellationToken = default)
-        => await dbContext.SaveChangesAsync(cancellationToken);
+        => _ = await SaveChangesWithConcurrencyAsync(cancellationToken);
 
     public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
-        => dbContext.SaveChangesAsync(cancellationToken);
+        => SaveChangesWithConcurrencyAsync(cancellationToken);
 
     public async Task<DbTransaction> BeginTransactionAsync(
         CancellationToken cancellationToken = default)
@@ -126,6 +127,18 @@ public sealed class UnitOfWork(
         await dbContext.DisposeAsync();
         _disposed = true;
         GC.SuppressFinalize(this);
+    }
+
+    private async Task<int> SaveChangesWithConcurrencyAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await dbContext.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateConcurrencyException exception)
+        {
+            throw new PersistenceConcurrencyException(exception);
+        }
     }
 
     private async Task DisposeTransactionAsync()
