@@ -5,8 +5,8 @@
     <PackageId>JohnVo.ProjectTemplates</PackageId>
     <Version>1.0.0</Version>
     <Authors>JohnVo</Authors>
-    <Description>JohnVo .NET 8+ DDD + Clean Architecture + Vertical Slice/CQRS project template with a realistic Mini Store starter, Specification + UnitOfWork, Minimal APIs, permission auth, FluentValidation, EF migrations, optional Redis/MinIO, LHS filtering, OpenTelemetry/OTLP, Gemini/OpenAI, React/Angular, Docker and GitHub Actions.</Description>
-    <PackageTags>dotnet-new;template;clean-architecture;vertical-slice;ddd;specification;unit-of-work;redis;minio;opentelemetry;otlp;ai;gemini;openai;filtering;pagination;minimal-api;jwt;refresh-token;orval;github-actions;nuget;docker-compose;just;ef-migrations;auto-migrate;feature-sliced-frontend</PackageTags>
+    <Description>JohnVo .NET 8+ DDD + Clean Architecture + Vertical Slice/CQRS project template with a realistic Mini Store starter, Specification + UnitOfWork, Minimal APIs, permission auth, FluentValidation, EF migrations, optional Redis/MinIO, LHS filtering, Aspire AppHost + OpenTelemetry/OTLP, Gemini/OpenAI, React/Angular, Docker and GitHub Actions.</Description>
+    <PackageTags>dotnet-new;template;clean-architecture;vertical-slice;ddd;specification;unit-of-work;redis;minio;aspire;opentelemetry;otlp;ai;gemini;openai;filtering;pagination;minimal-api;jwt;refresh-token;orval;github-actions;nuget;docker-compose;just;ef-migrations;auto-migrate;feature-sliced-frontend</PackageTags>
     <RepositoryUrl>https://github.com/johnvo402/project-templates</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageProjectUrl>https://github.com/johnvo402/project-templates</PackageProjectUrl>

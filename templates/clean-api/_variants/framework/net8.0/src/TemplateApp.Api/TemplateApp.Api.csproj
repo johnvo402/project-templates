@@ -3,6 +3,9 @@
     <ProjectReference Include="..\TemplateApp.Application\TemplateApp.Application.csproj" />
     <ProjectReference Include="..\TemplateApp.Domain\TemplateApp.Domain.csproj" />
     <ProjectReference Include="..\TemplateApp.Infrastructure\TemplateApp.Infrastructure.csproj" />
+    <!--#if (otel) -->
+    <ProjectReference Include="..\TemplateApp.ServiceDefaults\TemplateApp.ServiceDefaults.csproj" />
+    <!--#endif -->
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Mediator.Abstractions" />
@@ -12,12 +15,5 @@
     </PackageReference>
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
     <PackageReference Include="Swashbuckle.AspNetCore" />
-    <!--#if (otel) -->
-    <PackageReference Include="OpenTelemetry.Extensions.Hosting" />
-    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" />
-    <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" />
-    <PackageReference Include="OpenTelemetry.Instrumentation.Http" />
-    <PackageReference Include="OpenTelemetry.Instrumentation.Runtime" />
-    <!--#endif -->
   </ItemGroup>
 </Project>

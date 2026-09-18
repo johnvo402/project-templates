@@ -14,7 +14,11 @@ test:
     dotnet test TemplateApp.sln
 
 run:
+#if (otel)
+    dotnet run --project src/TemplateApp.AppHost
+#else
     dotnet run --project src/TemplateApp.Api
+#endif
 
 migrate name:
     dotnet ef migrations add {{name}} --project src/TemplateApp.Infrastructure --startup-project src/TemplateApp.Migrations
