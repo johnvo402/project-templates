@@ -108,16 +108,43 @@ Database__AutoMigrate
 
 OpenAI follows the same boundary. `OPENAI_API_KEY` / `OPENAI_MODEL` are Docker inputs and become `OpenAI__ApiKey` / `OpenAI__Model` for ASP.NET Core.
 
-When generated with `--otel true`, OpenTelemetry remains independent from Docker. No collector, Grafana stack or Compose service is generated. Point the API at an external OTLP endpoint with standard OpenTelemetry configuration:
+When generated with `--otel true`, the solution includes:
 
 ```text
-OTEL_SERVICE_NAME=TemplateApp.Api
-OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317
+src/TemplateApp.AppHost/
+src/TemplateApp.ServiceDefaults/
 ```
 
-The default OTel setup exports traces, metrics and logs; instruments ASP.NET Core and outgoing `HttpClient` traffic; and emits .NET runtime metrics. EF Core instrumentation is not enabled by default because its instrumentation package is prerelease.
+ServiceDefaults configures OpenTelemetry logs, traces and metrics, service discovery, HTTP resilience and health checks. The API calls `builder.AddServiceDefaults()` and exposes `/health` and `/alive`.
 
-If Docker is also enabled, the generated env examples expose `OTEL_SERVICE_NAME`, `OTEL_EXPORTER_OTLP_ENDPOINT`, `OTEL_EXPORTER_OTLP_PROTOCOL` and `OTEL_EXPORTER_OTLP_HEADERS`, and Compose forwards them into the API container. Docker still does not generate an OpenTelemetry Collector or any Grafana/Tempo/Jaeger/Prometheus/Loki service. The configured endpoint must be reachable from inside the API container; on Docker Desktop a collector running on the host is commonly addressed with `http://host.docker.internal:4317`.
+### Aspire without Docker
+
+`just run` starts the Aspire AppHost. The AppHost launches the API and automatically supplies the OTLP endpoint/authentication settings used by ServiceDefaults, so no manual `OTEL_EXPORTER_OTLP_ENDPOINT` or `OTEL_EXPORTER_OTLP_HEADERS` is required.
+
+The generated AppHost local profile exposes the dashboard on `http://localhost:18888` and OTLP/gRPC on `http://localhost:4317`.
+
+The application may target .NET 8, 9 or 10, but running the current Aspire 13 C# AppHost requires the .NET 10 SDK.
+
+### Aspire with Docker
+
+With `--docker true --otel true`, development Compose adds the official standalone Aspire Dashboard:
+
+```text
+http://localhost:18888  dashboard
+localhost:4317          OTLP/gRPC
+localhost:4318          OTLP/HTTP
+```
+
+The API container uses:
+
+```env
+OTEL_SERVICE_NAME=TemplateApp.Api
+OTEL_EXPORTER_OTLP_ENDPOINT=http://aspire-dashboard:18889
+OTEL_EXPORTER_OTLP_PROTOCOL=grpc
+OTEL_EXPORTER_OTLP_HEADERS=
+```
+
+The local Docker dashboard accepts OTLP without an API-key header and is bound only to localhost. Production Compose does not bundle the dashboard; configure `OTEL_EXPORTER_OTLP_ENDPOINT` and optional `OTEL_EXPORTER_OTLP_HEADERS` for your production observability backend.
 
 ## Mini Store domain
 

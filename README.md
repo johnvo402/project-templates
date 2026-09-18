@@ -42,7 +42,7 @@ Options:
 - `--minio true|false` (default `false`)
 - `--ai gemini|openai|none` (default `gemini`)
 - `--filter true|false` (default `false`)
-- `--otel true|false` (default `false`) — OpenTelemetry traces, metrics and logs via OTLP
+- `--otel true|false` (default `false`) — Aspire AppHost + ServiceDefaults with OpenTelemetry traces, metrics and logs
 - `--docker true|false` (default `false`)
 
 Always included: DDD primitives, Specification, Repository/ReadOnlyRepository, UnitOfWork, Mediator, Minimal APIs, JWT + rotating HttpOnly refresh token, permission policies, FluentValidation, startup migrations, profile management, Mini Store business modules, CI, `justfile`, and Git initialization.
@@ -130,22 +130,43 @@ Minio__Endpoint
 
 Frontend-specific environment variables belong to the frontend project rather than the backend configuration pipeline.
 
-## OpenTelemetry
+## Aspire / OpenTelemetry
 
-`--otel true` adds vendor-neutral OpenTelemetry observability to the API without enabling Docker or generating collector/Compose files.
+`--otel true` generates an **Aspire AppHost** and **ServiceDefaults** project. ServiceDefaults configures OpenTelemetry logs, traces and metrics, health checks, service discovery and standard HTTP resilience. The API uses `builder.AddServiceDefaults()` and exposes `/health` plus `/alive`.
 
-The generated API exports **traces, metrics and logs** through OTLP and includes stable instrumentation for ASP.NET Core requests, outgoing `HttpClient` calls and .NET runtime metrics. Health-check requests are excluded from tracing noise. Database-specific EF Core instrumentation is intentionally not included by default while its OpenTelemetry instrumentation package remains prerelease.
+The application can still target .NET 8, 9 or 10. The generated C# AppHost targets .NET 10 because current Aspire 13 tooling requires the .NET 10 SDK to run the AppHost.
 
-Configure any external collector or observability backend with standard OpenTelemetry environment variables, for example:
+### Without Docker
 
-```text
-OTEL_SERVICE_NAME=MyApp.Api
-OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317
+Run:
+
+```bash
+just run
 ```
 
-OpenTelemetry is independent from `--docker`: `--otel true` never enables Docker or creates an observability stack. When both `--docker true --otel true` are selected, Docker only forwards `OTEL_SERVICE_NAME`, `OTEL_EXPORTER_OTLP_ENDPOINT`, `OTEL_EXPORTER_OTLP_PROTOCOL` and `OTEL_EXPORTER_OTLP_HEADERS` into the API container; no Collector, Grafana, Tempo, Jaeger, Prometheus or Loki service is generated.
+When observability is enabled, `just run` starts `src/TemplateApp.AppHost`. Aspire starts the API and its dashboard, and automatically injects the OTLP endpoint/authentication settings into the API resource. The generated local profile uses:
 
-For Docker, the OTLP endpoint must be reachable **from inside the API container**. For example, a collector running on Docker Desktop's host is commonly reachable as `http://host.docker.internal:4317`; a remote collector should use its normal network hostname or URL.
+```text
+Dashboard:  http://localhost:18888
+OTLP/gRPC:  http://localhost:4317
+```
+
+You do not need to manually set `OTEL_EXPORTER_OTLP_ENDPOINT` or `OTEL_EXPORTER_OTLP_HEADERS` when launching through the AppHost.
+
+### With Docker
+
+When both `--docker true --otel true` are selected, development Compose also starts the official standalone Aspire Dashboard container. The API exports telemetry over the Docker network:
+
+```env
+OTEL_SERVICE_NAME=TemplateApp.Api
+OTEL_EXPORTER_OTLP_ENDPOINT=http://aspire-dashboard:18889
+OTEL_EXPORTER_OTLP_PROTOCOL=grpc
+OTEL_EXPORTER_OTLP_HEADERS=
+```
+
+The dashboard UI is available at `http://localhost:18888`. Host ports `4317` and `4318` are also mapped for OTLP/gRPC and OTLP/HTTP. These ports bind to localhost only.
+
+The bundled dashboard is **development-only** and stores telemetry in memory. `compose.prod.yaml` does not run an Aspire Dashboard. Production keeps standard `OTEL_*` passthrough so you can point the API at an external collector or observability platform.
 
 ## MinIO: avatar and product image
 
